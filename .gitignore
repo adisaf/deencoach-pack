@@ -1,0 +1,43 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# JetBrains / VS Code
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node modules (si on rajoute des outils JS plus tard)
+node_modules/
+
+# Uploads : dossier de travail local pour préparer les ZIPs avant
+# `gh release create`. Les ZIPs eux-mêmes (parfois plusieurs centaines
+# de Mo cumulés) ne doivent JAMAIS être committés ; ils vivent dans
+# les GitHub Releases. Le README de chaque sous-dossier reste tracké
+# pour documenter le contenu attendu.
+#
+# Note Git : on ne peut pas écrire `uploads/` puis `!uploads/**/README.md`
+# car ignorer un répertoire empêche Git d'y descendre, donc l'exception
+# n'est jamais évaluée. La forme correcte est d'ignorer les FICHIERS
+# du répertoire (`uploads/**`) puis de réautoriser explicitement les
+# sous-dossiers (`!uploads/**/`) et les README dans ces sous-dossiers.
+uploads/**
+!uploads/**/
+!uploads/**/README.md
+
+# Build artefacts éventuels
+build/
+dist/
+
+# Environment / secrets (par sécurité, même si ce repo n'en a pas)
+.env
+.env.*
+!.env.example

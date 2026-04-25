@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schemas/pack-manifest.schema.json",
+  "id": "mushaf_qpc_v2",
+  "category": "mushaf_font",
+  "version": "1.0.0",
+  "displayName": {
+    "fr": "KFGQPC V2 (Madani 1421H)",
+    "en": "KFGQPC V2 (Madani 1421H)",
+    "ar": "الخط المدني 1421 هـ (كي إف جي كيو بي سي إصدار 2)"
+  },
+  "description": {
+    "fr": "Police Mushaf calligraphie KFGQPC édition transitionnelle 1421H (2000), version intermédiaire enrichie par rapport à V1. 604 fichiers TTF, un par page. Mise en page Madinah enrichie. La plus lourde des 3 polices SPEC-006 (208 Mo décompressés).",
+    "en": "Mushaf font KFGQPC transitional 1421H (2000) edition, enriched intermediate version compared to V1. 604 TTF files, one per page. Enriched Madinah layout. The heaviest of the 3 SPEC-006 fonts (208 MB uncompressed).",
+    "ar": "خط المصحف بإصدار 1421هـ الانتقالي (2000)، نسخة متوسطة محسّنة مقارنة بالإصدار الأول. 604 ملف TTF، واحد لكل صفحة. تخطيط المصحف المدني المثري. الأثقل من الخطوط الثلاثة (208 ميغابايت بعد فك الضغط)."
+  },
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.0/qpc-v2.zip",
+  "sizeCompressed": 136208148,
+  "sizeUncompressed": 208121760,
+  "sha256": "9ead3836904f22324b5805c079c2911e13f384f2ca820254a36b8a22c28de555",
+  "fileCount": 604,
+  "layoutAssetPath": "assets/quran/layouts/qpc_v2_15_lines.db",
+  "fontNamePrefix": "p",
+  "transmission": "Hafs an Asim via al-Shatibiyya",
+  "license": "KFGQPC EULA - free distribution, no modification, no sale",
+  "minAppVersion": "1.2.0+12",
+  "source": {
+    "qulId": 249,
+    "qulPage": "https://qul.tarteel.ai/resources/font/249",
+    "downloadDate": "2026-04-25",
+    "scholarlyValidation": "Édition KFGQPC V2 1421H, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd. Aucune variante de qirāʾah, conforme au rasm Uthmānī."
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schemas/pack-manifest.schema.json",
+  "id": "mushaf_qpc_v1",
+  "category": "mushaf_font",
+  "version": "1.0.0",
+  "displayName": {
+    "fr": "KFGQPC V1 (Madani 1405H)",
+    "en": "KFGQPC V1 (Madani 1405H)",
+    "ar": "الخط المدني 1405 هـ (كي إف جي كيو بي سي إصدار 1)"
+  },
+  "description": {
+    "fr": "Police Mushaf calligraphie KFGQPC édition historique 1405H (1985), première édition imprimée par le Complexe Roi Fahd. 604 fichiers TTF, un par page Mushaf. Mise en page traditionnelle Madinah classique signée par le calligraphe ʿUthmān Ṭāhā.",
+    "en": "Mushaf font KFGQPC historical 1405H (1985) edition, first edition printed by the King Fahd Complex. 604 TTF files, one per Mushaf page. Traditional Madinah Mushaf layout calligraphed by ʿUthmān Ṭāhā.",
+    "ar": "خط المصحف بإصدار 1405هـ التاريخي (1985)، أول إصدار مطبوع من مجمع الملك فهد. 604 ملف TTF، واحد لكل صفحة. تخطيط المصحف المدني التقليدي بخط الخطاط عثمان طه."
+  },
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.0/qpc-v1.zip",
+  "sizeCompressed": 54502444,
+  "sizeUncompressed": 95020860,
+  "sha256": "b276e07b6e7c8df255c0a61fa9ae7f0d02fde074eec4e04c13fec75cf72e0031",
+  "fileCount": 604,
+  "layoutAssetPath": "assets/quran/layouts/qpc_v1_15_lines.db",
+  "fontNamePrefix": "p",
+  "transmission": "Hafs an Asim via al-Shatibiyya",
+  "license": "KFGQPC EULA - free distribution, no modification, no sale",
+  "minAppVersion": "1.2.0+12",
+  "source": {
+    "qulId": 238,
+    "qulPage": "https://qul.tarteel.ai/resources/font/238",
+    "downloadDate": "2026-04-25",
+    "scholarlyValidation": "Édition princeps King Fahd Complex (KFGQPC) 1405H, calligraphie ʿUthmān Ṭāhā, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd."
+  }
+}

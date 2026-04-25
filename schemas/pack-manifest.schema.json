@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Deen Coach Pack Manifest",
+  "description": "Schéma générique d'un manifest de pack téléchargeable (toutes catégories : mushaf-fonts, audio-recitations, translations, tafsir, adhkar-audio, etc.).",
+  "type": "object",
+  "required": [
+    "id",
+    "category",
+    "version",
+    "displayName",
+    "description",
+    "url",
+    "sizeCompressed",
+    "sizeUncompressed",
+    "sha256",
+    "fileCount",
+    "license",
+    "minAppVersion"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identifiant unique du pack en snake_case (ex: mushaf_qpc_v1, audio_husary_192kbps).",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "category": {
+      "type": "string",
+      "description": "Catégorie du pack pour filtrage côté app.",
+      "enum": [
+        "mushaf_font",
+        "audio_recitation",
+        "translation",
+        "tafsir",
+        "adhkar_audio"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "description": "Version SemVer du pack (MAJOR.MINOR.PATCH).",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "displayName": { "$ref": "#/definitions/trilingual" },
+    "description": { "$ref": "#/definitions/trilingual" },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL HTTPS du fichier ZIP à télécharger (typiquement GitHub Releases).",
+      "pattern": "^https://"
+    },
+    "sizeCompressed": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Taille du ZIP en octets (utilisée par la modal de consentement avant download)."
+    },
+    "sizeUncompressed": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Taille décompressée en octets (utilisée pour pré-check de l'espace disque)."
+    },
+    "sha256": {
+      "type": "string",
+      "description": "Hash SHA-256 hexadécimal du ZIP pour vérification d'intégrité post-download. Les 64 caractères hex sont obligatoires une fois le pack publié.",
+      "pattern": "^([a-f0-9]{64}|TO_BE_FILLED_AFTER_RELEASE)$"
+    },
+    "fileCount": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Nombre de fichiers attendus après extraction (utilisé pour vérification post-extract)."
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Licence textuelle du pack (vérifiée par talib-al-ilm pour les contenus religieux)."
+    },
+    "minAppVersion": {
+      "type": "string",
+      "description": "Version minimale d'app Flutter requise pour utiliser ce pack (MAJOR.MINOR.PATCH+BUILD).",
+      "pattern": "^\\d+\\.\\d+\\.\\d+\\+\\d+$"
+    },
+    "transmission": {
+      "type": "string",
+      "description": "Transmission canonique du Coran (obligatoire pour les packs mushaf_font, audio_recitation, translation, tafsir, adhkar_audio liés au Coran). Doit être 'Hafs an Asim via al-Shatibiyya' pour cette version de l'app.",
+      "enum": ["Hafs an Asim via al-Shatibiyya"]
+    },
+    "layoutAssetPath": {
+      "type": "string",
+      "description": "Chemin de l'asset Flutter vers le layout SQLite associé (spécifique aux packs mushaf_font ; le layout est embarqué dans l'APK, le pack ne contient que les TTF).",
+      "pattern": "^assets/.*\\.db$"
+    },
+    "fontNamePrefix": {
+      "type": "string",
+      "description": "Préfixe des fichiers TTF dans le ZIP (spécifique aux packs mushaf_font). Convention : <prefix><pageNumber>.ttf.",
+      "pattern": "^[a-z_]+$"
+    },
+    "source": {
+      "type": "object",
+      "description": "Métadonnées de traçabilité de la source du pack (audit religieux et juridique).",
+      "properties": {
+        "qulId": {
+          "type": ["integer", "null"],
+          "description": "ID de la ressource sur QUL Tarteel (qul.tarteel.ai) si applicable."
+        },
+        "qulPage": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL de la page QUL Tarteel correspondante."
+        },
+        "downloadDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date ISO de téléchargement du contenu source (audit)."
+        },
+        "scholarlyValidation": {
+          "type": "string",
+          "description": "Référence à la validation talib-al-ilm (nom du savant, comité, ou note méthodologique)."
+        },
+        "note": {
+          "type": "string",
+          "description": "Note libre (ex: information manquante à compléter, contexte historique)."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "trilingual": {
+      "type": "object",
+      "required": ["fr", "en", "ar"],
+      "description": "Champ trilingue obligatoire (français par défaut, anglais et arabe pour la Ummah).",
+      "properties": {
+        "fr": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 },
+        "ar": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
