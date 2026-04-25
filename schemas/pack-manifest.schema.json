@@ -25,13 +25,21 @@
     },
     "category": {
       "type": "string",
-      "description": "Catégorie du pack pour filtrage côté app.",
+      "description": "Pack category. The enum is the union of all categories already wired in the mobile app's pack registry. Adding a new value here REQUIRES a parallel change in the app's PackRemoteCatalog plus an entry in docs/CATEGORIES.md (status: active or reserved).",
       "enum": [
         "mushaf_font",
-        "audio_recitation",
-        "translation",
-        "tafsir",
-        "adhkar_audio"
+        "quran_audio",
+        "quran_audio_learning",
+        "quran_text",
+        "quran_translation",
+        "quran_tafsir",
+        "quran_transliteration",
+        "prayer_audio",
+        "salah",
+        "dua_audio",
+        "asma_allah",
+        "arabic_letters",
+        "hifz"
       ]
     },
     "version": {
