@@ -2,7 +2,7 @@
   "$schema": "../../schemas/pack-manifest.schema.json",
   "id": "mushaf_qpc_v2",
   "category": "mushaf_font",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": {
     "fr": "KFGQPC V2 (Madani 1421H)",
     "en": "KFGQPC V2 (Madani 1421H)",
@@ -13,10 +13,10 @@
     "en": "Mushaf font KFGQPC transitional 1421H (2000) edition, enriched intermediate version compared to V1. 604 TTF files, one per page. Enriched Madinah layout. The heaviest of the 3 SPEC-006 fonts (208 MB uncompressed).",
     "ar": "خط المصحف بإصدار 1421هـ الانتقالي (2000)، نسخة متوسطة محسّنة مقارنة بالإصدار الأول. 604 ملف TTF، واحد لكل صفحة. تخطيط المصحف المدني المثري. الأثقل من الخطوط الثلاثة (208 ميغابايت بعد فك الضغط)."
   },
-  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.0/qpc-v2.zip",
-  "sizeCompressed": 136208148,
-  "sizeUncompressed": 208121760,
-  "sha256": "9ead3836904f22324b5805c079c2911e13f384f2ca820254a36b8a22c28de555",
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.1/qpc-v2.zip",
+  "sizeCompressed": 136709275,
+  "sizeUncompressed": 215624263,
+  "sha256": "e914e4deb8ac2bf9798ad6902dca0489d843f0412d9dcde693d235d6b62a2c1d",
   "fileCount": 604,
   "layoutAssetPath": "assets/quran/layouts/qpc_v2_15_lines.db",
   "fontNamePrefix": "p",
@@ -26,7 +26,9 @@
   "source": {
     "qulId": 249,
     "qulPage": "https://qul.tarteel.ai/resources/font/249",
-    "downloadDate": "2026-04-25",
-    "scholarlyValidation": "Édition KFGQPC V2 1421H, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd. Aucune variante de qirāʾah, conforme au rasm Uthmānī."
-  }
+    "downloadDate": "2026-05-08",
+    "scholarlyValidation": "Édition KFGQPC V2 1421H, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd. Aucune variante de qirāʾah, conforme au rasm Uthmānī.",
+    "note": "ZIP reconstruit depuis les sources QUL font #249, layout #10 et quran-script #61. Le render JSON est précompilé dans render/mushaf_render_assets.json pour éviter les lectures SQLite au swipe."
+  },
+  "renderAssetPath": "render/mushaf_render_assets.json"
 }

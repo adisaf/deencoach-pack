@@ -47,8 +47,12 @@
       "description": "Version SemVer du pack (MAJOR.MINOR.PATCH).",
       "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
-    "displayName": { "$ref": "#/definitions/trilingual" },
-    "description": { "$ref": "#/definitions/trilingual" },
+    "displayName": {
+      "$ref": "#/definitions/trilingual"
+    },
+    "description": {
+      "$ref": "#/definitions/trilingual"
+    },
     "url": {
       "type": "string",
       "format": "uri",
@@ -73,7 +77,7 @@
     "fileCount": {
       "type": "integer",
       "minimum": 1,
-      "description": "Nombre de fichiers attendus après extraction (utilisé pour vérification post-extract)."
+      "description": "Nombre de fichiers métier attendus après extraction. Pour mushaf_font, ce nombre reste le nombre de TTF attendus même si renderAssetPath ajoute un artefact JSON précompilé."
     },
     "license": {
       "type": "string",
@@ -88,7 +92,9 @@
     "transmission": {
       "type": "string",
       "description": "Transmission canonique du Coran (obligatoire pour les packs mushaf_font, audio_recitation, translation, tafsir, adhkar_audio liés au Coran). Doit être 'Hafs an Asim via al-Shatibiyya' pour cette version de l'app.",
-      "enum": ["Hafs an Asim via al-Shatibiyya"]
+      "enum": [
+        "Hafs an Asim via al-Shatibiyya"
+      ]
     },
     "layoutAssetPath": {
       "type": "string",
@@ -105,7 +111,10 @@
       "description": "Métadonnées de traçabilité de la source du pack (audit religieux et juridique).",
       "properties": {
         "qulId": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "description": "ID de la ressource sur QUL Tarteel (qul.tarteel.ai) si applicable."
         },
         "qulPage": {
@@ -127,17 +136,35 @@
           "description": "Note libre (ex: information manquante à compléter, contexte historique)."
         }
       }
+    },
+    "renderAssetPath": {
+      "type": "string",
+      "description": "Chemin optionnel, dans le ZIP distant, vers un artefact de rendu Mushaf précompilé. Utilisé par les packs mushaf_font lourds pour éviter les lectures SQLite/script au swipe.",
+      "pattern": "^render/[A-Za-z0-9._/-]+\\.json$"
     }
   },
   "definitions": {
     "trilingual": {
       "type": "object",
-      "required": ["fr", "en", "ar"],
+      "required": [
+        "fr",
+        "en",
+        "ar"
+      ],
       "description": "Champ trilingue obligatoire (français par défaut, anglais et arabe pour la Ummah).",
       "properties": {
-        "fr": { "type": "string", "minLength": 1 },
-        "en": { "type": "string", "minLength": 1 },
-        "ar": { "type": "string", "minLength": 1 }
+        "fr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ar": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

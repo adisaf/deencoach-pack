@@ -2,7 +2,7 @@
   "$schema": "../../schemas/pack-manifest.schema.json",
   "id": "mushaf_qpc_v1",
   "category": "mushaf_font",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": {
     "fr": "KFGQPC V1 (Madani 1405H)",
     "en": "KFGQPC V1 (Madani 1405H)",
@@ -13,10 +13,10 @@
     "en": "Mushaf font KFGQPC historical 1405H (1985) edition, first edition printed by the King Fahd Complex. 604 TTF files, one per Mushaf page. Traditional Madinah Mushaf layout calligraphed by ʿUthmān Ṭāhā.",
     "ar": "خط المصحف بإصدار 1405هـ التاريخي (1985)، أول إصدار مطبوع من مجمع الملك فهد. 604 ملف TTF، واحد لكل صفحة. تخطيط المصحف المدني التقليدي بخط الخطاط عثمان طه."
   },
-  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.0/qpc-v1.zip",
-  "sizeCompressed": 54502444,
-  "sizeUncompressed": 95020860,
-  "sha256": "b276e07b6e7c8df255c0a61fa9ae7f0d02fde074eec4e04c13fec75cf72e0031",
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.1/qpc-v1.zip",
+  "sizeCompressed": 55056211,
+  "sizeUncompressed": 102523729,
+  "sha256": "11a821f0c65048d485321eea38b889aa47a54fa67c245a05454d8aa6319818a4",
   "fileCount": 604,
   "layoutAssetPath": "assets/quran/layouts/qpc_v1_15_lines.db",
   "fontNamePrefix": "p",
@@ -26,7 +26,9 @@
   "source": {
     "qulId": 238,
     "qulPage": "https://qul.tarteel.ai/resources/font/238",
-    "downloadDate": "2026-04-25",
-    "scholarlyValidation": "Édition princeps King Fahd Complex (KFGQPC) 1405H, calligraphie ʿUthmān Ṭāhā, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd."
-  }
+    "downloadDate": "2026-05-08",
+    "scholarlyValidation": "Édition princeps King Fahd Complex (KFGQPC) 1405H, calligraphie ʿUthmān Ṭāhā, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd.",
+    "note": "ZIP reconstruit depuis les sources QUL font #238, layout #15 et quran-script #57. Le render JSON est précompilé dans render/mushaf_render_assets.json pour éviter les lectures SQLite au swipe."
+  },
+  "renderAssetPath": "render/mushaf_render_assets.json"
 }

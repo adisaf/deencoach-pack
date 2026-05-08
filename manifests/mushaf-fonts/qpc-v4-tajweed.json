@@ -2,7 +2,7 @@
   "$schema": "../../schemas/pack-manifest.schema.json",
   "id": "mushaf_qpc_v4_tajweed",
   "category": "mushaf_font",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": {
     "fr": "KFGQPC V4 Tajwid (Madani 1441H)",
     "en": "KFGQPC V4 Tajweed (Madani 1441H)",
@@ -13,10 +13,10 @@
     "en": "Mushaf font KFGQPC V4 1441H with colored tajweed markers integrated into glyphs per the King Fahd Complex chromatic system. 604 TTF files, one per page. Calligraphic variant with visual recitation rules (madd, ikhfa, idgham, ghunnah, qalqalah). Traditional pedagogical aid reviewed by the Lajna ʿIlmiyya, not an innovation in the Quranic rasm.",
     "ar": "خط المصحف الإصدار 4 بإصدار 1441هـ مع علامات التجويد الملونة المدمجة في المحرف وفق النظام اللوني لمجمع الملك فهد. 604 ملف TTF، واحد لكل صفحة. متغيرة فنية مع قواعد التلاوة المرئية (المد والإخفاء والإدغام والغنة والقلقلة). مساعدة تربوية تقليدية مراجعة من اللجنة العلمية، وليست محدثة في رسم القرآن."
   },
-  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.0/qpc-v4-tajweed.zip",
-  "sizeCompressed": 68739219,
-  "sizeUncompressed": 166986908,
-  "sha256": "b29c028277b4b8bdc1fa15fd5c642191ed9eb88f81fff2ec7da2554f688f6562",
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/mushaf-fonts-v1.0.1/qpc-v4-tajweed.zip",
+  "sizeCompressed": 69975419,
+  "sizeUncompressed": 174488730,
+  "sha256": "dd9f7d2336447cb8678144b73e5dc568e6e7596e73d12fb1966859509dc2e643",
   "fileCount": 604,
   "layoutAssetPath": "assets/quran/layouts/qpc_v4_tajweed_15_lines.db",
   "fontNamePrefix": "p",
@@ -24,10 +24,11 @@
   "license": "KFGQPC EULA - free distribution, no modification, no sale",
   "minAppVersion": "1.0.1+1",
   "source": {
-    "qulId": null,
-    "qulPage": "https://qul.tarteel.ai/resources/font",
-    "downloadDate": "2026-04-25",
+    "qulId": 240,
+    "qulPage": "https://qul.tarteel.ai/resources/font/240",
+    "downloadDate": "2026-05-08",
     "scholarlyValidation": "Édition KFGQPC V4 tajwid 1441H avec coloration glyph-based des règles de tajwid. Le système chromatique est l'œuvre du Complexe Roi Fahd, validé par sa Lajna ʿIlmiyya. La transmission Hafs an Asim via al-Shatibiyya et le rasm Uthmānī sont strictement préservés ; les couleurs sont une aide visuelle uniquement.",
-    "note": "ID QUL Tarteel exact à confirmer auprès de qul.tarteel.ai support team."
-  }
+    "note": "ZIP reconstruit depuis les sources QUL font #240, layout #19 et quran-script #47. Le render JSON est précompilé dans render/mushaf_render_assets.json pour éviter les lectures SQLite au swipe."
+  },
+  "renderAssetPath": "render/mushaf_render_assets.json"
 }
