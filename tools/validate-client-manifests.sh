@@ -27,6 +27,11 @@ validate_manifest() {
     (.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
     (.signingKeyId == "deencoach-pack-2026-07") and
     (.artifacts | type == "array" and length > 0) and
+    (.artifacts as $artifacts |
+      ([ $artifacts[].itemKey ] | unique | length == ($artifacts | length)) and
+      ([ $artifacts[].fileName ] | unique | length == ($artifacts | length)) and
+      ([ $artifacts[].relativePath ] | unique | length == ($artifacts | length))
+    ) and
     ([.artifacts[] |
       (.itemKey | type == "string" and length > 0) and
       (.url | test("^https://github.com/adisaf/deencoach-pack/releases/download/")) and

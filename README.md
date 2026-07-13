@@ -2,13 +2,17 @@
 
 Public registry of downloadable content packs for the [Deen Coach](https://deencoach.app) mobile app (Quran, prayer, learning).
 
-Pack metadata lives in `manifests/`. Pack binaries (ZIPs) live in [GitHub Releases](https://github.com/adisaf/deencoach-pack/releases) of this repository.
+Pack metadata lives in `manifests/`. Pack artifacts, including ZIPs, raw text and
+per-surah JSON responses, live in [GitHub Releases](https://github.com/adisaf/deencoach-pack/releases) of this repository.
 
 ## How it works
 
-The mobile app fetches a manifest JSON, downloads the ZIP from the URL it advertises, verifies the SHA-256, then extracts and activates the content locally.
+The mobile app fetches a signed manifest JSON, verifies its Ed25519 signature,
+then downloads each declared artifact only after its SHA-256 and expected size
+have been received. ZIP artifacts are extracted locally; raw artifacts stay
+verbatim.
 
-Every release is signed by the maintainer ([@adisaf](https://github.com/adisaf)) and every pack carries a published SHA-256. A versioned manifest cannot use a placeholder digest. See [SECURITY.md](SECURITY.md) for verification and disclosure.
+Every manifest consumed by the mobile app is signed with the versioned Deen Coach Ed25519 public key, and every artifact carries a published SHA-256. Releases are attached to a pre-existing annotated Git tag. A versioned manifest cannot use a placeholder digest. See [SECURITY.md](SECURITY.md) for verification and disclosure.
 
 ## Product context
 

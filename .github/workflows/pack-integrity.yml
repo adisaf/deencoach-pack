@@ -1,0 +1,27 @@
+name: Pack integrity
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      # v4.2.2, SHA immuable pour éviter de suivre un tag d’action mutable.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate public repository safety
+        run: ./tools/guard-public-repository.sh
+      - name: Check shell syntax
+        run: |
+          for script in tools/*.sh; do
+            bash -n "$script"
+          done
+      - name: Validate signed manifests
+        run: |
+          ./tools/validate-client-manifests.sh
+          ./tools/verify-client-manifest-signatures.sh

@@ -1,0 +1,3 @@
+# Les signatures Ed25519 sont binaires : Git ne doit jamais les traiter comme
+# du texte ni tenter de leur appliquer des contrôles d’espaces.
+signed-manifests/**/*.sig binary

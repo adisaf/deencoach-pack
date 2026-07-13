@@ -15,13 +15,20 @@ OUTPUT_DIR="${REPO_ROOT}/uploads/quran-text"
 MANIFEST_DIR="${REPO_ROOT}/manifests/quran-text"
 RELEASE_TAG="${1:-quran-text-v1.0.0}"
 RELEASE_BASE="https://github.com/adisaf/deencoach-pack/releases/download/${RELEASE_TAG}"
-TANZIL_VERSION="1.1"
+PACK_VERSION="${RELEASE_TAG#quran-text-v}"
 LICENSE_URL="https://tanzil.net/docs/Text_License"
 UTHMANI_URL="https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&tatweel=true&quranType=uthmani&outType=txt-2&agree=true"
 SIMPLE_URL="https://tanzil.net/pub/download/index.php?marks=false&sajdah=false&tatweel=false&quranType=simple-clean&outType=txt-2&agree=true"
 ATTRIBUTION="Tanzil Quran Text, Copyright (C) 2007-2021 Tanzil Project"
+RETRIEVED_AT="$(date -u +%F)"
 
-for command in curl jq shasum wc; do
+[[ "${RELEASE_TAG}" == "quran-text-v${PACK_VERSION}" &&
+  "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+  echo "Erreur : le tag doit respecter quran-text-vX.Y.Z." >&2
+  exit 1
+}
+
+for command in curl date jq shasum wc; do
   command -v "${command}" >/dev/null 2>&1 || {
     echo "Erreur : '${command}' est requis." >&2
     exit 1
@@ -55,6 +62,7 @@ build_pack() {
 
   jq -n \
     --arg id "${id}" \
+    --arg pack_version "${PACK_VERSION}" \
     --arg url "${RELEASE_BASE}/${filename}" \
     --arg sha "${artifact_sha}" \
     --argjson size "${size_bytes}" \
@@ -67,11 +75,12 @@ build_pack() {
     --arg description_en "${description_en}" \
     --arg description_ar "${description_ar}" \
     --arg attribution "${ATTRIBUTION}" \
+    --arg retrieved_at "${RETRIEVED_AT}" \
     '{
       "$schema": "../../schemas/pack-manifest.schema.json",
       id: $id,
       category: "quran_text",
-      version: "1.0.0",
+      version: $pack_version,
       displayName: {fr: $display_fr, en: $display_en, ar: $display_ar},
       description: {fr: $description_fr, en: $description_en, ar: $description_ar},
       url: $url,
@@ -88,7 +97,7 @@ build_pack() {
         sourceAuthority: "Tanzil Project",
         sourceUrl: $source_url,
         sourceVersion: "1.1",
-        retrievedAt: "2026-07-13",
+        retrievedAt: $retrieved_at,
         licenseUrl: "https://tanzil.net/docs/Text_License",
         licenseSnapshotSha256: $license_sha,
         attribution: $attribution,

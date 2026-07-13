@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Publie une catégorie de packs dont les manifests sont vérifiés par le client.
-# Usage : ./tools/release-signed-pack-category.sh <verify|publish|verify-published> <category> <release-tag>
+# Usage : ./tools/release-signed-pack-category.sh <verify|tag|publish|verify-published> <category> <release-tag>
 
 set -euo pipefail
 
 readonly EXPECTED_REPOSITORY='adisaf/deencoach-pack'
+readonly EXPECTED_GITHUB_LOGIN='adisaf'
+readonly EXPECTED_GIT_AUTHOR_NAME='Fawaz ADISA'
+readonly EXPECTED_GIT_AUTHOR_EMAIL='adisaf@programmer.net'
 readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly SIGNED_MANIFESTS_DIR="${REPO_ROOT}/signed-manifests"
 readonly PUBLIC_KEY_PATH='keys/deencoach-pack-2026-07.pub.pem'
@@ -12,6 +15,7 @@ readonly PUBLIC_KEY_PATH='keys/deencoach-pack-2026-07.pub.pem'
 ACTION="${1:-}"
 CATEGORY="${2:-}"
 RELEASE_TAG="${3:-}"
+PACK_VERSION=''
 MANIFESTS=()
 ASSETS=()
 TEMPORARY_PATHS=()
@@ -41,8 +45,8 @@ require_commands() {
 
 validate_arguments() {
   case "${ACTION}" in
-    verify|publish|verify-published) ;;
-    *) fail 'action attendue : verify, publish ou verify-published.' ;;
+    verify|tag|publish|verify-published) ;;
+    *) fail 'action attendue : verify, tag, publish ou verify-published.' ;;
   esac
 
   [[ "${RELEASE_TAG}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || {
@@ -50,9 +54,18 @@ validate_arguments() {
   }
 
   case "${CATEGORY}" in
-    quran-text|quran-translations) ;;
+    quran-text)
+      PACK_VERSION="${RELEASE_TAG#quran-text-v}"
+      ;;
+    quran-translations)
+      PACK_VERSION="${RELEASE_TAG#quranenc-translations-v}"
+      ;;
     *) fail "catégorie non publiable par ce runbook : ${CATEGORY:-absente}." ;;
   esac
+
+  [[ "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+    fail "le tag ${RELEASE_TAG} ne correspond pas à la version attendue pour ${CATEGORY}."
+  }
 }
 
 collect_manifests() {
@@ -73,8 +86,9 @@ validate_manifest_urls() {
   local manifest="$1"
   local expected_prefix="https://github.com/${EXPECTED_REPOSITORY}/releases/download/${RELEASE_TAG}/"
 
-  jq -e --arg expected_prefix "${expected_prefix}" '
+  jq -e --arg expected_prefix "${expected_prefix}" --arg pack_version "${PACK_VERSION}" '
     .packId as $pack_id |
+    (.version == $pack_version) and
     (.signingKeyId == "deencoach-pack-2026-07") and
     ([.artifacts[] |
       (.url == ($expected_prefix + .fileName)) and
@@ -142,6 +156,7 @@ validate_signed_manifests() {
 validate_local_contract() {
   local manifest
 
+  "${REPO_ROOT}/tools/guard-public-repository.sh"
   validate_signed_manifests
   collect_and_verify_assets
 
@@ -175,7 +190,7 @@ verify_published_manifest_sources() {
 }
 
 verify_github_target() {
-  local actual_repository
+  local actual_repository actual_login
 
   actual_repository="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')" || {
     fail 'impossible de vérifier le dépôt GitHub ciblé.'
@@ -183,6 +198,58 @@ verify_github_target() {
   [[ "${actual_repository}" == "${EXPECTED_REPOSITORY}" ]] || {
     fail "dépôt GitHub inattendu : ${actual_repository}."
   }
+  actual_login="$(gh api user --jq '.login')" || {
+    fail 'impossible de vérifier le compte GitHub opérateur.'
+  }
+  [[ "${actual_login}" == "${EXPECTED_GITHUB_LOGIN}" ]] || {
+    fail "compte GitHub inattendu : ${actual_login}."
+  }
+}
+
+assert_git_identity() {
+  local author_name author_email
+
+  author_name="$(git config user.name)"
+  author_email="$(git config user.email)"
+  [[ "${author_name}" == "${EXPECTED_GIT_AUTHOR_NAME}" ]] || {
+    fail "auteur Git inattendu : ${author_name}."
+  }
+  [[ "${author_email}" == "${EXPECTED_GIT_AUTHOR_EMAIL}" ]] || {
+    fail "email Git inattendu : ${author_email}."
+  }
+}
+
+assert_remote_tag_absent() {
+  if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" \
+    >/dev/null 2>&1; then
+    fail "le tag ${RELEASE_TAG} existe déjà."
+  fi
+}
+
+assert_published_annotated_tag() {
+  local tag_commit main_commit
+
+  git fetch --quiet origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+  [[ "$(git cat-file -t "${RELEASE_TAG}")" == 'tag' ]] || {
+    fail "${RELEASE_TAG} doit être un tag annoté publié."
+  }
+  tag_commit="$(git rev-list -n1 "${RELEASE_TAG}")"
+  main_commit="$(git rev-parse origin/main)"
+  [[ "${tag_commit}" == "${main_commit}" ]] || {
+    fail "${RELEASE_TAG} doit pointer exactement sur origin/main."
+  }
+}
+
+create_annotated_tag() {
+  local release_target
+
+  assert_git_identity
+  assert_remote_tag_absent
+  release_target="$(git rev-parse origin/main)"
+  git tag -a "${RELEASE_TAG}" "${release_target}" \
+    -m "Deen Coach pack release ${RELEASE_TAG}"
+  git push origin "refs/tags/${RELEASE_TAG}"
+  assert_published_annotated_tag
 }
 
 assert_release_absent() {
@@ -247,16 +314,15 @@ verify_remote_assets() {
 }
 
 publish_release() {
-  local notes_file release_target
+  local notes_file
 
   notes_file="$(mktemp)"
   TEMPORARY_PATHS+=("${notes_file}")
-  release_target="$(git rev-parse origin/main)"
   write_release_notes "${notes_file}"
 
   gh release create "${RELEASE_TAG}" \
     --repo "${EXPECTED_REPOSITORY}" \
-    --target "${release_target}" \
+    --verify-tag \
     --title "Deen Coach packs ${RELEASE_TAG}" \
     --notes-file "${notes_file}" \
     "${ASSETS[@]}"
@@ -267,6 +333,7 @@ main() {
   require_commands
   validate_arguments
   collect_manifests
+  "${REPO_ROOT}/tools/guard-public-repository.sh"
 
   case "${ACTION}" in
     verify)
@@ -275,17 +342,26 @@ main() {
       verify_github_target
       echo "[OK] pré-vérification réussie : ${CATEGORY} est publiable sous ${RELEASE_TAG}."
       ;;
+    tag)
+      validate_local_contract
+      verify_published_manifest_sources
+      verify_github_target
+      create_annotated_tag
+      echo "[OK] tag annoté ${RELEASE_TAG} publié."
+      ;;
     publish)
       validate_local_contract
       verify_published_manifest_sources
       verify_github_target
       assert_release_absent
+      assert_published_annotated_tag
       publish_release
       verify_remote_assets
       echo "[OK] release ${RELEASE_TAG} publiée et vérifiée."
       ;;
     verify-published)
       validate_signed_manifests
+      verify_published_manifest_sources
       for manifest in "${MANIFESTS[@]}"; do
         validate_manifest_urls "${manifest}"
       done

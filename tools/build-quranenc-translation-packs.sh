@@ -19,6 +19,13 @@ KEYCHAIN_SERVICE="deencoach-pack-ed25519-2026-07"
 KEY_ID="deencoach-pack-2026-07"
 TERMS_URL="https://quranenc.com/ff/home/api"
 RETRIEVED_AT="$(date -u +%F)"
+PACK_VERSION="${RELEASE_TAG#quranenc-translations-v}"
+
+[[ "${RELEASE_TAG}" == "quranenc-translations-v${PACK_VERSION}" &&
+  "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+  echo "Erreur : le tag doit respecter quranenc-translations-vX.Y.Z." >&2
+  exit 1
+}
 
 for command in base64 curl date jq mktemp openssl security shasum wc; do
   command -v "${command}" >/dev/null 2>&1 || {
@@ -74,13 +81,11 @@ build_pack() {
     padded=$(printf '%03d' "${surah_number}")
     file="${translation_key}_${padded}.json"
     response_url="https://quranenc.com/api/v1/translation/sura/${translation_key}/${surah_number}"
-    if [[ ! -f "${pack_dir}/${file}" ]] || ! jq -e \
-      --arg surah "${surah_number}" '
-        (.result | type == "array" and length > 0) and
-        ([.result[] | .sura == $surah] | all)
-      ' "${pack_dir}/${file}" >/dev/null; then
-      curl -fsSL "${response_url}" -o "${pack_dir}/${file}"
-    fi
+    # Re-télécharger chaque réponse rend `retrievedAt` exact et évite de
+    # republier silencieusement un cache dont la version source a évolué.
+    curl --fail --location --retry 3 --retry-all-errors \
+      --connect-timeout 10 --max-time 120 --silent --show-error \
+      "${response_url}" -o "${pack_dir}/${file}"
     jq -e --arg surah "${surah_number}" '
       (.result | type == "array" and length > 0) and
       ([.result[] | .sura == $surah] | all)
@@ -112,6 +117,7 @@ build_pack() {
   jq -s '.' "${artifact_lines}" > "${artifacts_json}"
 
   jq -n -S -c \
+    --arg pack_version "${PACK_VERSION}" \
     --arg pack_id "${pack_id}" \
     --arg version "${version}" \
     --arg key_id "${KEY_ID}" \
@@ -125,7 +131,7 @@ build_pack() {
     '
       {
         packId: $pack_id,
-        version: "1.0.0",
+        version: $pack_version,
         signingKeyId: $key_id,
         artifacts: $artifacts[0],
         provenance: {
@@ -153,7 +159,7 @@ build_pack() {
     echo "Erreur : signature invalide pour ${pack_id}." >&2
     return 1
   }
-  echo "[OK] ${pack_id}: 114 réponses QuranEnc version ${version}"
+  echo "[OK] ${pack_id}: 114 réponses QuranEnc source ${version}, pack ${PACK_VERSION}"
 }
 
 build_pack quran_translation_fr_noor french_montada

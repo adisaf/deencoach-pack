@@ -15,7 +15,7 @@ This repository hosts content consumed automatically by the [Deen Coach](https:/
 - The mobile app refuses to install any pack whose downloaded ZIP SHA-256 does not match the manifest. The gate is enforced before extraction (no partial state on disk).
 - A versioned manifest never accepts a placeholder or an empty digest. The
   publication gate accepts only a 64-character lowercase hexadecimal SHA-256.
-- Releases are signed by the maintainer ([@adisaf](https://github.com/adisaf)). Verify signatures via the GitHub release page.
+- Manifests used by the signed mobile flow are verified with the versioned Ed25519 public key embedded in the app. Releases require a pre-existing annotated Git tag and are verified after publication by downloading every public artifact.
 
 To validate the manifest contract, then re-verify any published pack locally:
 
@@ -31,7 +31,7 @@ computes its SHA-256, and exits non-zero if it does not match.
 
 ## Religious integrity
 
-- Every Quran-related pack (mushaf font, audio recitation, translation, tafsir, adhkar) declares a `transmission` field. The current accepted value is **`Hafs an Asim via al-Shatibiyya`** only.
+- Quran text and recitation packs declare their transmission. The current accepted Quran-text transmission is **`Hafs an Asim via al-Shatibiyya`** only. Translations and tafsīr remain explicitly distinct from the Arabic text and preserve their source, version and attribution in provenance.
 - Manifest sources (`source.scholarlyValidation`) document the chain of validation. Adding a new pack requires this field to reference a recognized scholarly authority.
 - Sources outside Ahl al-Sunnah wa al-Jamaʿah (Sufi, Shi'a, Ismaili, modernist, unsourced) are rejected upstream and never enter this registry.
 

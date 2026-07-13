@@ -70,16 +70,22 @@ Ne construisez pas une source `conditional`, `written_permission_required` ou
 
 ```bash
 git add manifests/<category>/<pack-id>.json
-git commit -S -m "feat(<category>): publish <pack-id> v<version>"
+git commit -m "feat(<category>): publish <pack-id> v<version>"
 git push origin main
 ```
 
-Use `-S` to GPG-sign the commit when possible.
+La signature Ed25519 du manifest est la garantie consommée par l’application.
 
 ## 6. Publier une release signée consommable par l’application
 
-Le `justfile` local est volontairement ignoré par Git. Il ne contient aucun
-secret et délègue les contrôles reproductibles au script versionné
+Le `justfile` local est volontairement ignoré par Git. Créez-le depuis le
+modèle versionné, sans y ajouter de secret :
+
+```bash
+cp justfile.example justfile
+```
+
+Il délègue les contrôles reproductibles au script versionné
 `tools/release-signed-pack-category.sh`.
 
 Avant la publication, les manifests et signatures doivent être commités puis
@@ -90,6 +96,7 @@ traçable dans le dépôt.
 ```bash
 just doctor
 just release-verify quran-text quran-text-v1.0.0
+just release-tag quran-text quran-text-v1.0.0
 just release-publish quran-text quran-text-v1.0.0
 ```
 
@@ -97,13 +104,15 @@ Pour les traductions QuranEnc déjà admissibles :
 
 ```bash
 just release-verify quran-translations quranenc-translations-v1.0.0
+just release-tag quran-translations quranenc-translations-v1.0.0
 just release-publish quran-translations quranenc-translations-v1.0.0
 ```
 
-`release-publish` demande une confirmation humaine, refuse un tag existant,
-crée la release GitHub ciblée sur `origin/main`, puis retélécharge chaque
-artefact public et contrôle son SHA-256 et sa taille. Ce dernier contrôle est
-la preuve que l’application mobile peut récupérer les URL réellement publiées.
+`release-tag` exige l’identité Git de Fawaz ADISA, crée un tag annoté pointant
+sur `origin/main` et le publie. `release-publish` exige ce tag déjà publié,
+refuse une release existante, puis retélécharge chaque artefact public et
+contrôle son SHA-256 et sa taille. Ce dernier contrôle est la preuve que
+l’application mobile peut récupérer les URL réellement publiées.
 
 Pour rejouer uniquement ce contrôle après coup :
 
@@ -119,13 +128,15 @@ restent bloquées tant que leur gate juridique et religieux n’est pas levé.
 ## 7. Commande GitHub CLI historique
 
 ```bash
-gh release create <category>-v<version> \
+gh release create <category>-v<version> --verify-tag \
   --title "<Category title> v<version>" \
   --notes-file release-notes.md \
   uploads/<category>/<pack-id>.zip
 ```
 
-To sign the release tag, configure `git tag -s` defaults locally (see GitHub docs on signed tags).
+Le runbook `just` est obligatoire pour les packs consommés par l’application,
+car il vérifie aussi les signatures Ed25519, les URLs, les versions et tous les
+artefacts publics.
 
 ## 8. Vérification historique
 

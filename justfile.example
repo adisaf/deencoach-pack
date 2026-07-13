@@ -1,0 +1,31 @@
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+# Copier ce fichier vers `justfile` local. Le fichier local est ignoré par Git.
+
+default:
+    @just --list
+
+doctor:
+    @command -v gh >/dev/null
+    @command -v jq >/dev/null
+    @command -v openssl >/dev/null
+    @command -v curl >/dev/null
+    @command -v rg >/dev/null
+    @command -v shasum >/dev/null
+    @gh auth status --hostname github.com
+    @./tools/guard-public-repository.sh
+    @echo "doctor: OK"
+
+release-verify category release_tag:
+    @./tools/release-signed-pack-category.sh verify "{{category}}" "{{release_tag}}"
+
+[confirm("Créer et publier un tag Git annoté sous votre identité Git ?")]
+release-tag category release_tag:
+    @./tools/release-signed-pack-category.sh tag "{{category}}" "{{release_tag}}"
+
+[confirm("Publier une GitHub Release immuable et ses artefacts publics ?")]
+release-publish category release_tag:
+    @./tools/release-signed-pack-category.sh publish "{{category}}" "{{release_tag}}"
+
+release-verify-published category release_tag:
+    @./tools/release-signed-pack-category.sh verify-published "{{category}}" "{{release_tag}}"
