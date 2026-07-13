@@ -17,9 +17,12 @@ RELEASE_TAG="${1:-quranenc-translations-v1.0.0}"
 RELEASE_BASE="https://github.com/adisaf/deencoach-pack/releases/download/${RELEASE_TAG}"
 KEYCHAIN_SERVICE="deencoach-pack-ed25519-2026-07"
 KEY_ID="deencoach-pack-2026-07"
+PUBLIC_KEY_FILE="${REPO_ROOT}/keys/deencoach-pack-2026-07.pub.pem"
 TERMS_URL="https://quranenc.com/ff/home/api"
 RETRIEVED_AT="$(date -u +%F)"
 PACK_VERSION="${RELEASE_TAG#quranenc-translations-v}"
+MANIFEST_VALIDITY_DAYS="${MANIFEST_VALIDITY_DAYS:-90}"
+MAX_MANIFEST_VALIDITY_DAYS=90
 
 [[ "${RELEASE_TAG}" == "quranenc-translations-v${PACK_VERSION}" &&
   "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
@@ -27,12 +30,29 @@ PACK_VERSION="${RELEASE_TAG#quranenc-translations-v}"
   exit 1
 }
 
-for command in base64 curl date jq mktemp openssl security shasum wc; do
+for command in base64 cp curl date dirname jq mkdir mktemp mv openssl python3 rm security shasum wc; do
   command -v "${command}" >/dev/null 2>&1 || {
     echo "Erreur : '${command}' est requis." >&2
     exit 1
   }
 done
+
+[[ "${MANIFEST_VALIDITY_DAYS}" =~ ^[1-9][0-9]*$ &&
+  "${MANIFEST_VALIDITY_DAYS}" -le "${MAX_MANIFEST_VALIDITY_DAYS}" ]] || {
+  echo 'Erreur : MANIFEST_VALIDITY_DAYS doit être un entier positif.' >&2
+  exit 1
+}
+
+issued_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+expires_at=$(python3 - "${issued_at}" "${MANIFEST_VALIDITY_DAYS}" <<'PY'
+from datetime import datetime, timedelta
+import sys
+
+issued_at = datetime.strptime(sys.argv[1], '%Y-%m-%dT%H:%M:%SZ')
+expires_at = issued_at + timedelta(days=int(sys.argv[2]))
+print(expires_at.strftime('%Y-%m-%dT%H:%M:%SZ'))
+PY
+)
 
 mkdir -p "${OUTPUT_DIR}" "${SIGNED_DIR}"
 metadata_path="${OUTPUT_DIR}/quranenc-translations-list.json"
@@ -43,16 +63,34 @@ curl -fsSL "${TERMS_URL}" -o "${terms_path}"
 terms_sha=$(shasum -a 256 "${terms_path}" | awk '{print $1}')
 
 private_key_file=$(mktemp /private/tmp/deencoach-quranenc-sign.XXXXXX)
-trap 'rm -f "${private_key_file}"' EXIT
+staging_dir=$(mktemp -d "${REPO_ROOT}/.quranenc-manifest-staging.XXXXXX")
+backup_dir=$(mktemp -d "${REPO_ROOT}/.quranenc-manifest-backup.XXXXXX")
+rollback_required=false
+cleanup() {
+  if [[ "${rollback_required}" == true ]] &&
+      declare -F restore_backup >/dev/null; then
+    if ! restore_backup; then
+      echo 'CRITIQUE : restauration impossible, sauvegardes conservées.' >&2
+      rm -f "${private_key_file}"
+      rm -rf "${staging_dir}"
+      return 1
+    fi
+  fi
+  rm -f "${private_key_file}"
+  rm -rf "${staging_dir}" "${backup_dir}"
+}
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
 security find-generic-password -s "${KEYCHAIN_SERVICE}" -w |
   base64 --decode > "${private_key_file}"
 chmod 600 "${private_key_file}"
 
+manifest_names=()
 build_pack() {
   local pack_id="$1"
   local translation_key="$2"
   local pack_dir="${OUTPUT_DIR}/${pack_id}"
-  local manifest_path="${SIGNED_DIR}/${pack_id}.json"
+  local manifest_path="${staging_dir}/${pack_id}.json"
   local signature_path="${manifest_path}.sig"
   local artifact_lines="${pack_dir}/.artifacts.ndjson"
   local artifacts_json="${pack_dir}/.artifacts.json"
@@ -121,6 +159,8 @@ build_pack() {
     --arg pack_id "${pack_id}" \
     --arg version "${version}" \
     --arg key_id "${KEY_ID}" \
+    --arg issued_at "${issued_at}" \
+    --arg expires_at "${expires_at}" \
     --arg source_url "https://quranenc.com/en/browse/${translation_key}" \
     --arg title "${title}" \
     --arg description "${description}" \
@@ -133,6 +173,8 @@ build_pack() {
         packId: $pack_id,
         version: $pack_version,
         signingKeyId: $key_id,
+        issuedAt: $issued_at,
+        expiresAt: $expires_at,
         artifacts: $artifacts[0],
         provenance: {
           sourceAuthority: "QuranEnc.com",
@@ -159,6 +201,9 @@ build_pack() {
     echo "Erreur : signature invalide pour ${pack_id}." >&2
     return 1
   }
+  openssl pkeyutl -verify -rawin -pubin -inkey "${PUBLIC_KEY_FILE}" \
+    -in "${manifest_path}" -sigfile "${signature_path}" >/dev/null
+  manifest_names+=("${pack_id}")
   echo "[OK] ${pack_id}: 114 réponses QuranEnc source ${version}, pack ${PACK_VERSION}"
 }
 
@@ -168,6 +213,57 @@ build_pack quran_translation_en_hilali_khan english_hilali_khan
 build_pack quran_translation_en_rwwad english_rwwad
 build_pack quran_translation_fr_rashid french_rashid
 
-"${REPO_ROOT}/tools/validate-client-manifests.sh" quran-translations
-"${REPO_ROOT}/tools/verify-client-manifest-signatures.sh"
+for pack_id in "${manifest_names[@]}"; do
+  final_manifest="${SIGNED_DIR}/${pack_id}.json"
+  backup_manifest="${backup_dir}/${pack_id}.json"
+  if [[ -f "${final_manifest}" ]]; then
+    cp "${final_manifest}" "${backup_manifest}"
+    : > "${backup_manifest}.exists"
+  fi
+  if [[ -f "${final_manifest}.sig" ]]; then
+    cp "${final_manifest}.sig" "${backup_manifest}.sig"
+    : > "${backup_manifest}.sig.exists"
+  fi
+done
+rollback_required=true
+
+restore_backup() {
+  for pack_id in "${manifest_names[@]}"; do
+    final_manifest="${SIGNED_DIR}/${pack_id}.json"
+    backup_manifest="${backup_dir}/${pack_id}.json"
+    if [[ -f "${backup_manifest}.exists" ]]; then
+      cp "${backup_manifest}" "${final_manifest}"
+    else
+      rm -f "${final_manifest}"
+    fi
+    if [[ -f "${backup_manifest}.sig.exists" ]]; then
+      cp "${backup_manifest}.sig" "${final_manifest}.sig"
+    else
+      rm -f "${final_manifest}.sig"
+    fi
+  done
+}
+
+for pack_id in "${manifest_names[@]}"; do
+  final_manifest="${SIGNED_DIR}/${pack_id}.json"
+  staged_manifest="${staging_dir}/${pack_id}.json"
+  if ! mv "${staged_manifest}" "${final_manifest}" ||
+      ! mv "${staged_manifest}.sig" "${final_manifest}.sig"; then
+    echo 'Erreur : publication locale interrompue, restauration des manifests.' >&2
+    restore_backup
+    rollback_required=false
+    exit 1
+  fi
+done
+
+if ! "${REPO_ROOT}/tools/validate-client-manifests.sh" quran-translations ||
+    ! "${REPO_ROOT}/tools/verify-client-manifest-signatures.sh"; then
+  echo 'Erreur : validation post-publication échouée, restauration des manifests.' >&2
+  restore_backup
+  rollback_required=false
+  "${REPO_ROOT}/tools/validate-client-manifests.sh" quran-translations
+  "${REPO_ROOT}/tools/verify-client-manifest-signatures.sh"
+  exit 1
+fi
+rollback_required=false
 echo "Lots QuranEnc construits dans ${OUTPUT_DIR}. Publication interdite avant revue."

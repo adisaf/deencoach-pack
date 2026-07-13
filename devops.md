@@ -40,7 +40,7 @@
 
 - Outil : GitHub Actions
 - Pipeline : garde secrets et clés privées, syntaxe Bash, validation des manifests et signatures Ed25519
-- Stratégie de publication : commit sur `main`, tag annoté, GitHub Release, re-téléchargement SHA-256 et taille
+- Stratégie de publication : branche courte, PR verte vers `main`, tag annoté, GitHub Release, re-téléchargement SHA-256 et taille
 
 ## Observabilité
 
@@ -53,7 +53,15 @@
 - Secrets : clé privée Ed25519 dans le trousseau macOS, jamais dans Git ni GitHub Actions
 - Intégrité mobile : signature Ed25519 du manifest, SHA-256 et taille par artefact avant installation
 - Publication : compte GitHub et identité Git Fawaz ADISA vérifiés par le runbook
-- Dépôt public : garde anti-secrets et workflow de validation obligatoire
+- Dépôt public : garde anti-secrets, PR obligatoire, statut `Pack integrity`
+  strict, force-push et suppression interdits, Actions limitées aux actions
+  GitHub épinglées par SHA
+- Rotation Ed25519 : manifests bornés à 90 jours, renouvelés et re-signés
+  avant expiration ; procédure de compromission dans `keys/README.md`
+- Preuve de configuration GitHub : exécuter trimestriellement
+  `gh api repos/adisaf/deencoach-pack/branches/main/protection` et
+  `gh api repos/adisaf/deencoach-pack/actions/permissions`, puis consigner
+  tout écart avant publication
 
 ## Backups et DR
 
@@ -73,3 +81,4 @@
 | Date | Action | Auteur | Référence |
 | --- | --- | --- | --- |
 | 2026-07-13 | Ajout du runbook public sécurisé, de la CI et du contexte opératoire | Fawaz ADISA | Stabilisation 2026-H2 |
+| 2026-07-13 | Protection GitHub de `main`, permissions Actions minimales et expiration des manifests à 90 jours | Fawaz ADISA | Stabilisation 2026-H2 |
