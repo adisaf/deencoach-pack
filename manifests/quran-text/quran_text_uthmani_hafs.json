@@ -1,0 +1,36 @@
+{
+  "$schema": "../../schemas/pack-manifest.schema.json",
+  "id": "quran_text_uthmani_hafs",
+  "category": "quran_text",
+  "version": "1.0.0",
+  "displayName": {
+    "fr": "Texte coranique Uthmani Hafs",
+    "en": "Uthmani Hafs Quran text",
+    "ar": "نص القرآن العثماني برواية حفص"
+  },
+  "description": {
+    "fr": "Copie verbatim du texte Uthmani Tanzil, avec attribution obligatoire.",
+    "en": "Verbatim Tanzil Uthmani text with required attribution.",
+    "ar": "نسخة حرفية من نص تنزيل العثماني مع الإسناد المطلوب."
+  },
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/quran-text-v1.0.0/quran-uthmani-hafs.txt",
+  "artifactFormat": "raw",
+  "contentType": "text/plain; charset=utf-8",
+  "sizeCompressed": 1396087,
+  "sizeUncompressed": 1396087,
+  "sha256": "6933e133dd56db778c801bf738848454e43648105a151e8d84d86a7cae39ec5f",
+  "fileCount": 1,
+  "transmission": "Hafs an Asim via al-Shatibiyya",
+  "license": "Tanzil Quran Text License, CC BY 3.0 with verbatim-copy conditions",
+  "minAppVersion": "1.0.1+10",
+  "provenance": {
+    "sourceAuthority": "Tanzil Project",
+    "sourceUrl": "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&tatweel=true&quranType=uthmani&outType=txt-2&agree=true",
+    "sourceVersion": "1.1",
+    "retrievedAt": "2026-07-13",
+    "licenseUrl": "https://tanzil.net/docs/Text_License",
+    "licenseSnapshotSha256": "a2baf0832e5a61c295029803e5d1a3d46488b3aa5497b379b69c8407a836c2d1",
+    "attribution": "Tanzil Quran Text, Copyright (C) 2007-2021 Tanzil Project",
+    "redistributionStatus": "allowed"
+  }
+}

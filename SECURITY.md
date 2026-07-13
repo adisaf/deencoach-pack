@@ -13,17 +13,21 @@ This repository hosts content consumed automatically by the [Deen Coach](https:/
 
 - Every published pack carries a 64-character hex `sha256` field in its manifest.
 - The mobile app refuses to install any pack whose downloaded ZIP SHA-256 does not match the manifest. The gate is enforced before extraction (no partial state on disk).
-- Manifests with the placeholder value `TO_BE_FILLED_AFTER_RELEASE` are explicitly rejected.
+- A versioned manifest never accepts a placeholder or an empty digest. The
+  publication gate accepts only a 64-character lowercase hexadecimal SHA-256.
 - Releases are signed by the maintainer ([@adisaf](https://github.com/adisaf)). Verify signatures via the GitHub release page.
 
-To re-verify any published pack locally:
+To validate the manifest contract, then re-verify any published pack locally:
 
 ```bash
+./tools/validate-manifests.sh
 ./tools/verify-checksums.sh <category> <pack>
 # Example: ./tools/verify-checksums.sh mushaf-fonts qpc-v1
 ```
 
-The script downloads the ZIP from the URL declared in the manifest, computes its SHA-256, and exits non-zero if it does not match.
+The validation script rejects incomplete manifests before publication. The
+checksum script downloads the ZIP from the URL declared in the manifest,
+computes its SHA-256, and exits non-zero if it does not match.
 
 ## Religious integrity
 

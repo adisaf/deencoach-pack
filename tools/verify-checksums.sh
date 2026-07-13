@@ -42,7 +42,6 @@ PACK_FILTER="${2:-}"
 
 PASS_COUNT=0
 FAIL_COUNT=0
-SKIP_COUNT=0
 FAILURES=()
 
 verify_manifest() {
@@ -54,9 +53,10 @@ verify_manifest() {
   url=$(jq -r '.url' "${manifest_path}")
   expected_sha=$(jq -r '.sha256' "${manifest_path}")
 
-  if [[ "${expected_sha}" == "TO_BE_FILLED_AFTER_RELEASE" ]]; then
-    echo "[SKIP] ${manifest_rel} : SHA-256 placeholder (pack pas encore release)"
-    SKIP_COUNT=$((SKIP_COUNT + 1))
+  if [[ ! "${expected_sha}" =~ ^[a-f0-9]{64}$ ]]; then
+    echo "[FAIL] ${manifest_rel} : SHA-256 publié invalide ou absent"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    FAILURES+=("${manifest_rel} (invalid published SHA-256)")
     return 0
   fi
 
@@ -113,7 +113,6 @@ echo "====================================="
 echo "Résumé :"
 echo "  ✅ OK   : ${PASS_COUNT}"
 echo "  ❌ FAIL : ${FAIL_COUNT}"
-echo "  ⏭  SKIP : ${SKIP_COUNT}"
 
 if [[ "${FAIL_COUNT}" -gt 0 ]]; then
   echo ""

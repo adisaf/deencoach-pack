@@ -56,8 +56,17 @@
     "url": {
       "type": "string",
       "format": "uri",
-      "description": "URL HTTPS du fichier ZIP à télécharger (typiquement GitHub Releases).",
+      "description": "URL HTTPS de l'artefact immuable à télécharger, typiquement une GitHub Release.",
       "pattern": "^https://"
+    },
+    "artifactFormat": {
+      "type": "string",
+      "description": "Format de l'artefact distribué. `raw` est réservé aux fichiers unitaires consommés directement par l'application ; `zip` est requis lorsqu'une extraction est nécessaire.",
+      "enum": ["raw", "zip"]
+    },
+    "contentType": {
+      "type": "string",
+      "description": "Type MIME de l'artefact publié."
     },
     "sizeCompressed": {
       "type": "integer",
@@ -71,8 +80,8 @@
     },
     "sha256": {
       "type": "string",
-      "description": "Hash SHA-256 hexadécimal du ZIP pour vérification d'intégrité post-download. Les 64 caractères hex sont obligatoires une fois le pack publié.",
-      "pattern": "^([a-f0-9]{64}|TO_BE_FILLED_AFTER_RELEASE)$"
+      "description": "Hash SHA-256 hexadécimal du ZIP publié pour vérification d'intégrité post-download. Un manifest versionné dans ce registre ne peut jamais contenir de placeholder.",
+      "pattern": "^[a-f0-9]{64}$"
     },
     "fileCount": {
       "type": "integer",
@@ -135,6 +144,30 @@
           "type": "string",
           "description": "Note libre (ex: information manquante à compléter, contexte historique)."
         }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Preuve de provenance, d'attribution et de droit de redistribution de l'artefact publié.",
+      "required": [
+        "sourceAuthority",
+        "sourceUrl",
+        "sourceVersion",
+        "retrievedAt",
+        "licenseUrl",
+        "licenseSnapshotSha256",
+        "attribution",
+        "redistributionStatus"
+      ],
+      "properties": {
+        "sourceAuthority": {"type": "string", "minLength": 1},
+        "sourceUrl": {"type": "string", "format": "uri"},
+        "sourceVersion": {"type": "string", "minLength": 1},
+        "retrievedAt": {"type": "string", "format": "date"},
+        "licenseUrl": {"type": "string", "format": "uri"},
+        "licenseSnapshotSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "attribution": {"type": "string", "minLength": 1},
+        "redistributionStatus": {"enum": ["allowed", "conditional"]}
       }
     },
     "renderAssetPath": {

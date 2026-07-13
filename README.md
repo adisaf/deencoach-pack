@@ -8,7 +8,7 @@ Pack metadata lives in `manifests/`. Pack binaries (ZIPs) live in [GitHub Releas
 
 The mobile app fetches a manifest JSON, downloads the ZIP from the URL it advertises, verifies the SHA-256, then extracts and activates the content locally.
 
-Every release is signed by the maintainer ([@adisaf](https://github.com/adisaf)) and every pack carries a published SHA-256. See [SECURITY.md](SECURITY.md) for verification and disclosure.
+Every release is signed by the maintainer ([@adisaf](https://github.com/adisaf)) and every pack carries a published SHA-256. A versioned manifest cannot use a placeholder digest. See [SECURITY.md](SECURITY.md) for verification and disclosure.
 
 ## Product context
 
