@@ -9,11 +9,21 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SIGNED_DIR="${REPO_ROOT}/signed-manifests"
 CATEGORY_FILTER="${1:-}"
 PACK_FILTER="${2:-}"
+MINIMUM_REMAINING_DAYS="${MINIMUM_REMAINING_DAYS:-14}"
 
-command -v jq >/dev/null 2>&1 || {
-  echo "Erreur : 'jq' est requis." >&2
+for command in date jq; do
+  command -v "${command}" >/dev/null 2>&1 || {
+    echo "Erreur : '${command}' est requis." >&2
+    exit 1
+  }
+done
+
+[[ "${MINIMUM_REMAINING_DAYS}" =~ ^[0-9]+$ ]] || {
+  echo 'Erreur : MINIMUM_REMAINING_DAYS doit être un entier positif ou nul.' >&2
   exit 1
 }
+minimum_remaining_seconds=$((MINIMUM_REMAINING_DAYS * 24 * 60 * 60))
+current_epoch=$(date -u +%s)
 
 pass_count=0
 fail_count=0
@@ -22,10 +32,17 @@ validate_manifest() {
   local path="$1"
   local relative_path="${path#${REPO_ROOT}/}"
 
-  if ! jq -e '
+  if ! jq -e \
+    --argjson current_epoch "${current_epoch}" \
+    --argjson minimum_remaining_seconds "${minimum_remaining_seconds}" '
     (.packId | test("^[a-z0-9_]+$")) and
     (.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
     (.signingKeyId == "deencoach-pack-2026-07") and
+    (.issuedAt | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+    (.expiresAt | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+    ((.issuedAt | fromdateiso8601) < (.expiresAt | fromdateiso8601)) and
+    (((.expiresAt | fromdateiso8601) - (.issuedAt | fromdateiso8601)) <= (90 * 24 * 60 * 60)) and
+    ((.expiresAt | fromdateiso8601) > ($current_epoch + $minimum_remaining_seconds)) and
     (.artifacts | type == "array" and length > 0) and
     (.artifacts as $artifacts |
       ([ $artifacts[].itemKey ] | unique | length == ($artifacts | length)) and
