@@ -5,7 +5,7 @@
 # Valide les invariants de publication sans télécharger d'artefact : JSON
 # parseable, SHA-256 publié, URL HTTPS et métadonnées obligatoires.
 #
-# Usage : ./tools/validate-manifests.sh [category] [pack] [--require-provenance]
+# Usage : ./tools/validate-manifests.sh [category] [pack] [--require-provenance|--allow-quarantined]
 
 set -euo pipefail
 
@@ -13,10 +13,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFESTS_DIR="${REPO_ROOT}/manifests"
 CATEGORY_FILTER="${1:-}"
 PACK_FILTER="${2:-}"
-REQUIRE_PROVENANCE="${3:-}"
+VALIDATION_MODE="${3:-}"
 
-if [[ -n "${REQUIRE_PROVENANCE}" && "${REQUIRE_PROVENANCE}" != "--require-provenance" ]]; then
-  echo "Erreur : troisième argument invalide : ${REQUIRE_PROVENANCE}" >&2
+if [[ -n "${VALIDATION_MODE}" &&
+    "${VALIDATION_MODE}" != "--require-provenance" &&
+    "${VALIDATION_MODE}" != "--allow-quarantined" ]]; then
+  echo "Erreur : troisième argument invalide : ${VALIDATION_MODE}" >&2
   exit 1
 fi
 
@@ -41,6 +43,7 @@ validate_manifest() {
     (.sizeCompressed | type == "number" and . > 0) and
     (.sizeUncompressed | type == "number" and . > 0) and
     (.fileCount | type == "number" and . > 0) and
+    (.publicationStatus == "active" or .publicationStatus == "quarantined") and
     (.minAppVersion | test("^[0-9]+\\.[0-9]+\\.[0-9]+\\+[0-9]+$")) and
     ([.displayName.fr, .displayName.en, .displayName.ar,
       .description.fr, .description.en, .description.ar,
@@ -51,7 +54,14 @@ validate_manifest() {
     return
   fi
 
-  if [[ "${REQUIRE_PROVENANCE}" == "--require-provenance" ]] && ! jq -e '
+  if [[ "${VALIDATION_MODE}" != "--allow-quarantined" ]] &&
+      [[ "$(jq -r '.publicationStatus' "${manifest_path}")" != "active" ]]; then
+    echo "[FAIL] ${manifest_rel} : statut de publication non admissible"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    return
+  fi
+
+  if [[ "${VALIDATION_MODE}" == "--require-provenance" ]] && ! jq -e '
     (.provenance.sourceAuthority | type == "string" and length > 0) and
     (.provenance.sourceUrl | test("^https://")) and
     (.provenance.sourceVersion | type == "string" and length > 0) and

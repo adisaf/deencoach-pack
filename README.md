@@ -34,7 +34,7 @@ Full product, methodology and contact information lives on the official site: **
 
 ## License
 
-The repository code (manifests, schemas, scripts, docs) is released under the [MIT License](LICENSE). Pack contents (TTF, audio, translations) keep their original licenses, declared in each manifest's `license` field.
+The repository code (manifests, schemas, scripts, docs) is released under the [MIT License](LICENSE). A pack content may be distributed only when its original licence, provenance and attribution are verified for the exact artefact. The source of truth is [the rights matrix](docs/SOURCE_RIGHTS_MATRIX.md); a manifest `license` field alone is not proof of redistribution rights.
 
 ---
 

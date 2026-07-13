@@ -28,10 +28,13 @@ téléchargeables (fichiers TTF des polices KFGQPC, fichiers audio des
 récitateurs, traductions du Coran, etc.) gardent leurs licences d'origine
 indiquées dans le champ `license` de chaque manifest.
 
-Exemples de licences des contenus packs :
-- KFGQPC EULA pour les polices Mushaf : "Use, Copy, Distribute Free of Cost,
-  no modification, no sale"
-- Domaine public pour les récitations historiques
-- Licences propres par traducteur pour les traductions du sens du Coran
+Les contenus de packs ne sont pas couverts par une licence générale de ce
+dépôt. La licence applicable doit être prouvée, archivée et rattachée à
+l'artefact précis avant sa publication. Les polices KFGQPC actuellement
+référencées sont désactivées pour la redistribution par Deen Coach tant que le
+texte officiel de leur licence, son empreinte et la provenance binaire ne sont
+pas archivés et vérifiés. Les références de droits et les décisions de
+publication se trouvent dans `docs/SOURCE_RIGHTS_MATRIX.md`.
 
-Toute redistribution des contenus packs doit respecter ces licences originelles.
+Toute redistribution d'un contenu de pack doit respecter les droits prouvés du
+titulaire correspondant.

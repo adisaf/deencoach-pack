@@ -15,6 +15,7 @@
     "sha256",
     "fileCount",
     "license",
+    "publicationStatus",
     "minAppVersion"
   ],
   "properties": {
@@ -91,7 +92,12 @@
     "license": {
       "type": "string",
       "minLength": 1,
-      "description": "Licence textuelle du pack (vérifiée par talib-al-ilm pour les contenus religieux)."
+      "description": "Licence textuelle du pack. Elle doit être juridiquement vérifiée et rattachée à la provenance de l'artefact précis ; la revue religieuse est une gate distincte."
+    },
+    "publicationStatus": {
+      "type": "string",
+      "description": "Statut de publication du manifest. Seul `active` est admissible à la signature ou à une release ; `quarantined` conserve une trace historique sans autoriser de redistribution.",
+      "enum": ["active", "quarantined"]
     },
     "minAppVersion": {
       "type": "string",

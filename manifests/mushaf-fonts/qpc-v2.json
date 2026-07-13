@@ -21,14 +21,15 @@
   "layoutAssetPath": "assets/quran/layouts/qpc_v2_15_lines.db",
   "fontNamePrefix": "p",
   "transmission": "Hafs an Asim via al-Shatibiyya",
-  "license": "KFGQPC EULA - free distribution, no modification, no sale",
+  "license": "Source licence not archived or verified: redistribution disabled",
+  "publicationStatus": "quarantined",
   "minAppVersion": "1.0.1+1",
   "source": {
     "qulId": 249,
     "qulPage": "https://qul.tarteel.ai/resources/font/249",
     "downloadDate": "2026-05-08",
-    "scholarlyValidation": "Édition KFGQPC V2 1421H, transmission Hafs an Asim via al-Shatibiyya, validée par la Lajna ʿIlmiyya du Complexe Roi Fahd. Aucune variante de qirāʾah, conforme au rasm Uthmānī.",
-    "note": "ZIP reconstruit depuis les sources QUL font #249, layout #10 et quran-script #61. Le render JSON est précompilé dans render/mushaf_render_assets.json pour éviter les lectures SQLite au swipe."
+    "scholarlyValidation": "Transmission déclarée par le produit : Hafs an Asim via al-Shatibiyya. La correspondance de l'artefact exact avec une approbation du comité KFGQPC doit être documentée avant toute réactivation.",
+    "note": "ZIP historique reconstruit depuis QUL font #249, layout #10 et quran-script #61. Redistribution désactivée : la licence officielle de l'artefact et sa provenance binaire ne sont pas archivées."
   },
   "renderAssetPath": "render/mushaf_render_assets.json"
 }
