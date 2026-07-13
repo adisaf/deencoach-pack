@@ -22,6 +22,11 @@ Full product, methodology and contact information lives on the official site: **
 | `schemas/pack-manifest.schema.json` | JSON Schema validating every manifest. |
 | `docs/` | Operational notes for maintainers (hosting, versioning, categories). |
 | `tools/verify-checksums.sh` | Script to re-verify every published pack against its declared SHA-256. |
+| `tools/validate-client-manifests.sh` | Validates signed client manifests, artifact paths, provenance and digests. |
+| `tools/verify-client-manifest-signatures.sh` | Verifies Ed25519 signatures from the versioned public key. |
+| `tools/build-tanzil-text-packs.sh` | Rebuilds the permitted verbatim Tanzil text packs. |
+| `tools/build-quranenc-translation-packs.sh` | Rebuilds the permitted versioned QuranEnc responses without rewriting them. |
+| `signed-manifests/` | Immutable manifests verified by the Flutter client before any artifact URL is used. |
 
 ## License
 

@@ -37,6 +37,10 @@ uploads/**
 build/
 dist/
 
+# Runbook de publication local : aucune configuration, aucun secret et aucun
+# binaire de release ne doivent être versionnés.
+justfile
+
 # Environment / secrets (par sécurité, même si ce repo n'en a pas)
 .env
 .env.*

@@ -40,6 +40,32 @@ This command must exit `0`. A versioned manifest with an absent, malformed or
 placeholder digest is a publication failure. Do not push the manifest and do
 not create a release until the actual ZIP hash and sizes have been measured.
 
+## 4.b Manifests consommés par l'application
+
+Les nouveaux packs Deen Coach utilisent `signed-manifests/` en complément du
+manifest de publication. L'application vérifie la signature Ed25519 avant de
+lire une URL d'artefact. La clé privée reste dans le trousseau macOS et ne doit
+jamais être ajoutée à Git ou à la CI.
+
+Pour les packs QuranEnc, l'artefact est une réponse JSON par sourate. Le script
+de construction conserve les réponses verbatim et génère 114 SHA-256 dans le
+manifest signé. Les 114 fichiers doivent être joints à la release désignée par
+les URLs du manifest, alors que le manifest et sa signature restent publiés sur
+`origin/main` pour être vérifiés avant tout téléchargement.
+
+```bash
+./tools/build-tanzil-text-packs.sh
+./tools/sign-client-manifests.sh quran-text
+./tools/build-quranenc-translation-packs.sh
+./tools/validate-client-manifests.sh
+./tools/verify-client-manifest-signatures.sh
+./tools/verify-quran-text-pack.sh uploads/quran-text/quran-uthmani-hafs.txt
+./tools/verify-quranenc-translation-pack.sh quran_translation_fr_noor
+```
+
+Ne construisez pas une source `conditional`, `written_permission_required` ou
+`source_license_unknown`. Consultez d'abord `docs/SOURCE_RIGHTS_MATRIX.md`.
+
 ## 5. Commit and push the manifest
 
 ```bash
@@ -50,7 +76,47 @@ git push origin main
 
 Use `-S` to GPG-sign the commit when possible.
 
-## 6. Create the signed release with assets
+## 6. Publier une release signée consommable par l’application
+
+Le `justfile` local est volontairement ignoré par Git. Il ne contient aucun
+secret et délègue les contrôles reproductibles au script versionné
+`tools/release-signed-pack-category.sh`.
+
+Avant la publication, les manifests et signatures doivent être commités puis
+publiés sur `origin/main`. La pré-vérification échoue sinon, afin que l’URL
+du manifest consommé par Flutter ne puisse jamais désigner un artefact non
+traçable dans le dépôt.
+
+```bash
+just doctor
+just release-verify quran-text quran-text-v1.0.0
+just release-publish quran-text quran-text-v1.0.0
+```
+
+Pour les traductions QuranEnc déjà admissibles :
+
+```bash
+just release-verify quran-translations quranenc-translations-v1.0.0
+just release-publish quran-translations quranenc-translations-v1.0.0
+```
+
+`release-publish` demande une confirmation humaine, refuse un tag existant,
+crée la release GitHub ciblée sur `origin/main`, puis retélécharge chaque
+artefact public et contrôle son SHA-256 et sa taille. Ce dernier contrôle est
+la preuve que l’application mobile peut récupérer les URL réellement publiées.
+
+Pour rejouer uniquement ce contrôle après coup :
+
+```bash
+just release-verify-published quran-text quran-text-v1.0.0
+```
+
+Le runbook ne permet volontairement que `quran-text` et
+`quran-translations`, les deux catégories dont les droits de redistribution,
+les sources et les manifests signés sont documentés. Les autres catégories
+restent bloquées tant que leur gate juridique et religieux n’est pas levé.
+
+## 7. Commande GitHub CLI historique
 
 ```bash
 gh release create <category>-v<version> \
@@ -61,10 +127,15 @@ gh release create <category>-v<version> \
 
 To sign the release tag, configure `git tag -s` defaults locally (see GitHub docs on signed tags).
 
-## 7. Verify
+## 8. Vérification historique
 
 ```bash
 ./tools/verify-checksums.sh <category> <pack-id>
 ```
 
 Must exit 0. The script downloads the public URL and checks the SHA-256 against the manifest.
+
+Pour une release signée consommée par Flutter, vérifiez aussi la signature et
+les artefacts publiés après téléchargement dans un répertoire propre. Puis
+mettez seulement les URLs finales dans le catalogue Flutter et exécutez une QA
+connectée, hors ligne, annulation, reprise et redémarrage.

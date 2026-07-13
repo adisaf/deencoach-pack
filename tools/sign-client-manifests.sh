@@ -66,7 +66,8 @@ for category_dir in "${MANIFESTS_DIR}"/*/; do
             sha256: .sha256,
             expectedBytes: .sizeUncompressed
           }
-        ]
+        ],
+        provenance: .provenance
       }
     ' "${source_manifest}" > "${output_manifest}"
 
