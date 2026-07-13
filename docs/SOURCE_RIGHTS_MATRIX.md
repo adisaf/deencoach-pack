@@ -24,7 +24,7 @@ manifest.
 | Tanzil | `quran_text_uthmani_hafs`, `quran_text_simple_search` | `allowed` | Copie verbatim seulement, avis Tanzil intégré, attribution et lien visibles, veille des mises à jour. | https://tanzil.net/docs/Text_License |
 | QuranEnc, version exposée par l'API | `quran_translation_fr_noor`, `quran_translation_en_saheeh`, `quran_translation_en_hilali_khan`, `quran_translation_en_rwwad`, `quran_translation_fr_rashid` | `allowed` | Réponses API conservées sans réécriture, attribution de l'éditeur et QuranEnc, version source, informations de transcription, veille des versions. | https://quranenc.com/ff/home/api |
 | QuranEnc, version non exposée par l'API | `quran_translation_fr_hamidullah`, `quran_tafsir_mukhtasar_ar`, `quran_tafsir_mukhtasar_fr` | `conditional` | Les endpoints répondent mais les clés sont absentes de la liste officielle de métadonnées. Aucun miroir avant version officielle traçable et revue `talib-al-ilm` du corpus exact. | https://quranenc.com/ff/home/api |
-| KFGQPC, polices Mushaf V1/V2/V4 | `mushaf_qpc_v1`, `mushaf_qpc_v2`, `mushaf_qpc_v4_tajweed` | `conditional` | La transmission Hafs est documentée et les manifests déclarent une licence de redistribution sans modification ni vente. Avant migration signée, archiver le texte de licence issu de chaque police, son digest et la preuve binaire de la source officielle. | https://fonts.qurancomplex.gov.sa/ |
+| KFGQPC, polices Mushaf V1/V2/V4 | `mushaf_qpc_v1`, `mushaf_qpc_v2`, `mushaf_qpc_v4_tajweed` | `source_license_unknown` | QUL identifie les ressources comme provenant de KFGQPC, mais indique que chaque ressource conserve ses propres droits. Le portail officiel KFGQPC affiche tous droits réservés et ne fournit pas, pour ces artefacts précis, une licence de redistribution archivable. Aucun miroir, ZIP, manifest signé ou activation runtime avant archivage du texte officiel applicable, de son digest et de la preuve binaire de la source. | https://fonts.qurancomplex.gov.sa/ |
 | Quran Foundation | Récitations audio par sourate et métadonnées API | `written_permission_required` | Les conditions limitent le cache durable et la redistribution brute. Les accès Content API sont serveur uniquement. | https://api-docs.quran.foundation/legal/developer-terms/ |
 | Assabile | Adhan HQ | `written_permission_required` | Le site déclare tous droits réservés. Le téléchargement individuel ne vaut pas droit de republier. | https://www.assabile.com/ |
 | AbdurRahman.org / SalafiAudio | Audio pas-à-pas de la prière | `source_license_unknown` | Le contenu attribué au Dr. Saleh As-Saleh reste religieusement identifiable, mais le droit de recopier les MP3 doit être archivé avant tout miroir. | https://salafiaudio.files.wordpress.com/2015/03/ |
@@ -33,6 +33,7 @@ manifest.
 | IslamCan | Audio alphabet arabe intégré | `source_license_unknown` | Les fichiers sont actuellement inclus dans l'application mais aucune licence de redistribution exploitable n'est archivée dans le registre. | https://www.islamcan.com/learn-arabic/ |
 | QUL / Tarteel | Scripts, layouts, polices, tajwīd et ressources associées | `conditional` | Vérifier et archiver la licence de chaque ressource et de son auteur. La FAQ QUL ne confère pas une licence uniforme. | https://qul.tarteel.ai/faq |
 | fawazahmed0/quran-api | Translittérations | `conditional` | Le dépôt est sous Unlicense, mais les sources éditoriales sous-jacentes restent à identifier et attribuer avant redistribution. | https://github.com/fawazahmed0/quran-api |
+| quran411.com | `quran_transliteration_simple` embarqué dans l'application | `source_license_unknown` | Une page de conditions consultée le 2026-07-13 signale des restrictions, mais aucun snapshot immuable, aucune licence de reproduction et aucun digest ne sont archivés. Aucun nouvel artefact avant autorisation écrite explicite ou corpus de remplacement dont la licence est archivée. | https://quran411.com/terms-of-use |
 | Production interne | Lettres, Hifz, adhkār, Asmā’ | `conditional` | Autorité éditoriale prouvée, licence des voix, revue `talib-al-ilm`, source et degré pour chaque contenu religieux. | Registre éditorial interne |
 
 ## Exigences minimales de provenance
@@ -64,8 +65,11 @@ checksum avant publication.
    verbatim, sourate par sourate, avec les informations de transcription.
 2. Ne jamais empaqueter ni publier les audios Quran Foundation, Assabile,
    EveryAyah ou Archive.org avant la gate correspondante.
-3. Conserver les packs Mushaf déjà publiés, mais compléter leur dossier de
-   licence ressource par ressource avant toute nouvelle version ou signature
-   de manifest client.
+3. Mettre en quarantaine les packs Mushaf KFGQPC V1/V2/V4 : aucun nouveau ZIP,
+   manifest signé, lien de téléchargement ou activation runtime. Les assets de
+   release historiques restent un risque public à traiter par une décision de
+   retrait explicite du propriétaire du dépôt. Toute reprise exige, ressource
+   par ressource, le texte officiel de licence, son digest et la preuve binaire
+   de la source.
 4. La source distante ne doit rester qu'un canal de construction contrôlé,
    jamais une dépendance runtime de l'application après migration.

@@ -2,23 +2,28 @@
 
 Each pack belongs to a single category. The category is declared in `manifests/<category>/<pack>.json` and validated against `schemas/pack-manifest.schema.json`.
 
-Three statuses are used below:
+Four statuses are used below:
 
 | Status | Meaning |
 |---|---|
 | **active** | Published in this repo today (manifests + GitHub Releases). |
 | **reserved** | Defined in the mobile app's pack registry but not yet hosted here. The convention is fixed; future contributions must follow it. |
 | **prospective** | Idea documented to keep the namespace coherent. Not yet wired in the app, may be revisited or dropped. Adding one requires a pre-commit conversation with the maintainer and a `talib-al-ilm` review. |
+| **quarantined** | Historical publication retained for traceability but forbidden from new publication, signature or runtime activation until its legal and provenance gate is complete. |
 
 Naming convention: `category` is **snake_case singular** in manifests (`mushaf_font`), **kebab-case singular or plural** in repo paths (`mushaf-fonts`).
 
 ## Quran
 
-### `mushaf_font` (active)
+### `mushaf_font` (quarantined)
 
 Per-page Mushaf TTF fonts (one TTF per page). Required manifest fields: `transmission`, `layoutAssetPath`, `fontNamePrefix`. ZIP layout: `<fontNamePrefix>1.ttf` … `<fontNamePrefix><pageCount>.ttf`.
 
-Currently published: `mushaf_qpc_v1`, `mushaf_qpc_v2`, `mushaf_qpc_v4_tajweed`.
+Historical release assets: `mushaf_qpc_v1`, `mushaf_qpc_v2`,
+`mushaf_qpc_v4_tajweed`. They are quarantined because the official licence and
+binary provenance of each exact artefact are not archived. See
+`docs/SOURCE_RIGHTS_MATRIX.md` and
+`docs/audits/2026-07-13-kfgqpc-rights-and-provenance.md`.
 
 Religious gates: `transmission` must be `"Hafs an Asim via al-Shatibiyya"`. Tajwid color systems are accepted only when sourced from a recognized publisher (KFGQPC, Dar al-Maarifah).
 
@@ -32,7 +37,7 @@ Religious gates: reciter must belong to Ahl al-Sunnah wa al-Jamaʿah. No Sufi na
 
 Pedagogical recitations (mu'allim mode, kid-repeat mode). Same ZIP layout as `quran_audio`. The pack metadata makes the educational pattern explicit (e.g. `tags: ["muallim", "word_by_word"]`).
 
-### `quran_text` (reserved)
+### `quran_text` (active)
 
 Quran source text variants downloadable as a single payload (e.g. Uthmani Hafs, Simple Clean for search). ZIP layout: `quran.txt` or `quran.json` plus a metadata manifest. Required: `transmission`.
 
