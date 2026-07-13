@@ -8,12 +8,7 @@ SECRET_PATTERN='-----BEGIN [A-Z ]*PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}|AK
 
 cd "${REPO_ROOT}"
 
-command -v rg >/dev/null 2>&1 || {
-  echo "Erreur : 'rg' est requis pour contrôler les fichiers suivis." >&2
-  exit 1
-}
-
-tracked_env_paths="$(git ls-files | rg '(^|/)\.env($|\.)' | rg -v '(^|/)\.env\.example$' || true)"
+tracked_env_paths="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -Ev '(^|/)\.env\.example$' || true)"
 if [[ -n "${tracked_env_paths}" ]]; then
   echo 'Erreur : un fichier .env est suivi par Git.' >&2
   printf '%s\n' "${tracked_env_paths}" >&2

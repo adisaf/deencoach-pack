@@ -57,3 +57,12 @@ Aucun finding ouvert.
   publique des SHA-256 et tailles.
 - Garder les corpus QuranEnc verbatim, avec attribution, version et digest des
   conditions d’utilisation archivés dans la provenance.
+
+## 5. Correctif CI post-publication
+
+Le workflow GitHub Actions a révélé que l’image Ubuntu ne fournit pas
+nécessairement `rg`. Le garde de dépôt a donc été rendu portable en utilisant
+`grep -E`, disponible sur le runner, pour détecter les fichiers `.env` suivis.
+Le contrôle de sécurité reste identique et le prérequis `rg` a été retiré du
+runbook local. La correction ne touche ni les manifests, ni les signatures, ni
+les artefacts déjà publiés.

@@ -10,7 +10,6 @@ doctor:
     @command -v jq >/dev/null
     @command -v openssl >/dev/null
     @command -v curl >/dev/null
-    @command -v rg >/dev/null
     @command -v shasum >/dev/null
     @gh auth status --hostname github.com
     @./tools/guard-public-repository.sh
