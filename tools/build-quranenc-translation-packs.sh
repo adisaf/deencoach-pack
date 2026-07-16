@@ -18,6 +18,7 @@ RELEASE_BASE="https://github.com/adisaf/deencoach-pack/releases/download/${RELEA
 KEYCHAIN_SERVICE="deencoach-pack-ed25519-2026-07"
 KEY_ID="deencoach-pack-2026-07"
 PUBLIC_KEY_FILE="${REPO_ROOT}/keys/deencoach-pack-2026-07.pub.pem"
+MANIFEST_REVISION="${MANIFEST_REVISION:-}"
 TERMS_URL="https://quranenc.com/ff/home/api"
 RETRIEVED_AT="$(date -u +%F)"
 PACK_VERSION="${RELEASE_TAG#quranenc-translations-v}"
@@ -27,6 +28,11 @@ MAX_MANIFEST_VALIDITY_DAYS=90
 [[ "${RELEASE_TAG}" == "quranenc-translations-v${PACK_VERSION}" &&
   "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
   echo "Erreur : le tag doit respecter quranenc-translations-vX.Y.Z." >&2
+  exit 1
+}
+
+[[ "${MANIFEST_REVISION}" =~ ^r[1-9][0-9]*$ ]] || {
+  echo 'Erreur : MANIFEST_REVISION est obligatoire et doit respecter rN.' >&2
   exit 1
 }
 
@@ -90,11 +96,17 @@ build_pack() {
   local pack_id="$1"
   local translation_key="$2"
   local pack_dir="${OUTPUT_DIR}/${pack_id}"
-  local manifest_path="${staging_dir}/${pack_id}.json"
+  local manifest_path="${staging_dir}/${pack_id}-${MANIFEST_REVISION}.json"
   local signature_path="${manifest_path}.sig"
   local artifact_lines="${pack_dir}/.artifacts.ndjson"
   local artifacts_json="${pack_dir}/.artifacts.json"
   local metadata
+
+  [[ ! -e "${SIGNED_DIR}/${pack_id}-${MANIFEST_REVISION}.json" &&
+    ! -e "${SIGNED_DIR}/${pack_id}-${MANIFEST_REVISION}.json.sig" ]] || {
+    echo "Erreur : révision immuable déjà présente pour ${pack_id}-${MANIFEST_REVISION}." >&2
+    return 1
+  }
 
   metadata=$(jq -c --arg key "${translation_key}" \
     '.translations[] | select(.key == $key)' "${metadata_path}")
@@ -137,6 +149,7 @@ build_pack() {
     jq -n -c \
       --arg item_key "surah_${padded}" \
       --arg url "${RELEASE_BASE}/${file}" \
+      --arg fallback_url "${response_url}" \
       --arg relative_path "${pack_id}/${file}" \
       --arg file_name "${file}" \
       --arg sha256 "${sha256}" \
@@ -144,6 +157,7 @@ build_pack() {
       '{
         itemKey: $item_key,
         url: $url,
+        fallbackUrls: [$fallback_url],
         relativePath: $relative_path,
         fileName: $file_name,
         contentType: "application/json",
@@ -213,9 +227,12 @@ build_pack quran_translation_en_hilali_khan english_hilali_khan
 build_pack quran_translation_en_rwwad english_rwwad
 build_pack quran_translation_fr_rashid french_rashid
 
+SIGNED_DIR_OVERRIDE="${staging_dir}" \
+  "${REPO_ROOT}/tools/verify-client-fallbacks.sh" quran-translations
+
 for pack_id in "${manifest_names[@]}"; do
-  final_manifest="${SIGNED_DIR}/${pack_id}.json"
-  backup_manifest="${backup_dir}/${pack_id}.json"
+  final_manifest="${SIGNED_DIR}/${pack_id}-${MANIFEST_REVISION}.json"
+  backup_manifest="${backup_dir}/${pack_id}-${MANIFEST_REVISION}.json"
   if [[ -f "${final_manifest}" ]]; then
     cp "${final_manifest}" "${backup_manifest}"
     : > "${backup_manifest}.exists"
@@ -229,8 +246,8 @@ rollback_required=true
 
 restore_backup() {
   for pack_id in "${manifest_names[@]}"; do
-    final_manifest="${SIGNED_DIR}/${pack_id}.json"
-    backup_manifest="${backup_dir}/${pack_id}.json"
+    final_manifest="${SIGNED_DIR}/${pack_id}-${MANIFEST_REVISION}.json"
+    backup_manifest="${backup_dir}/${pack_id}-${MANIFEST_REVISION}.json"
     if [[ -f "${backup_manifest}.exists" ]]; then
       cp "${backup_manifest}" "${final_manifest}"
     else
@@ -245,8 +262,8 @@ restore_backup() {
 }
 
 for pack_id in "${manifest_names[@]}"; do
-  final_manifest="${SIGNED_DIR}/${pack_id}.json"
-  staged_manifest="${staging_dir}/${pack_id}.json"
+  final_manifest="${SIGNED_DIR}/${pack_id}-${MANIFEST_REVISION}.json"
+  staged_manifest="${staging_dir}/${pack_id}-${MANIFEST_REVISION}.json"
   if ! mv "${staged_manifest}" "${final_manifest}" ||
       ! mv "${staged_manifest}.sig" "${final_manifest}.sig"; then
     echo 'Erreur : publication locale interrompue, restauration des manifests.' >&2

@@ -18,6 +18,12 @@ PACK_FILTER="${2:-}"
 MANIFEST_VALIDITY_DAYS="${MANIFEST_VALIDITY_DAYS:-90}"
 MAX_MANIFEST_VALIDITY_DAYS=90
 PUBLIC_KEY_FILE="${REPO_ROOT}/keys/deencoach-pack-2026-07.pub.pem"
+MANIFEST_REVISION="${MANIFEST_REVISION:-}"
+
+[[ "${MANIFEST_REVISION}" =~ ^r[1-9][0-9]*$ ]] || {
+  echo 'Erreur : MANIFEST_REVISION est obligatoire et doit respecter rN.' >&2
+  exit 1
+}
 
 "${REPO_ROOT}/tools/validate-manifests.sh" \
   "${CATEGORY_FILTER}" "${PACK_FILTER}" --require-provenance
@@ -84,11 +90,15 @@ for category_dir in "${MANIFESTS_DIR}"/*/; do
       continue
     fi
 
-    relative_path="${category_name}/${pack_id}.json"
+    relative_path="${category_name}/${pack_id}-${MANIFEST_REVISION}.json"
     output_manifest="${OUTPUT_DIR}/${relative_path}"
     temporary_manifest="${staging_dir}/${relative_path}"
     temporary_signature="${temporary_manifest}.sig"
     mkdir -p "$(dirname "${temporary_manifest}")"
+    [[ ! -e "${output_manifest}" && ! -e "${output_manifest}.sig" ]] || {
+      echo "Erreur : révision immuable déjà présente : ${relative_path}." >&2
+      exit 1
+    }
 
     jq -S -c \
       --arg key_id "${KEY_ID}" \
@@ -104,11 +114,12 @@ for category_dir in "${MANIFESTS_DIR}"/*/; do
           {
             itemKey: "bundle",
             url: .url,
+            fallbackUrls: (.fallbackUrls // []),
             relativePath: (.id + "/" + (.url | split("/") | last)),
             fileName: (.url | split("/") | last),
             contentType: (.contentType // "application/octet-stream"),
             sha256: .sha256,
-            expectedBytes: .sizeUncompressed
+            expectedBytes: .sizeCompressed
           }
         ],
         provenance: .provenance
@@ -128,7 +139,7 @@ for category_dir in "${MANIFESTS_DIR}"/*/; do
       -in "${temporary_manifest}" -sigfile "${temporary_signature}" >/dev/null
     manifest_relatives+=("${relative_path}")
     signed_count=$((signed_count + 1))
-    echo "[OK] signed-manifests/${category_name}/${pack_id}.json"
+    echo "[OK] signed-manifests/${relative_path}"
   done
 done
 
@@ -136,6 +147,10 @@ done
   echo "Erreur : aucun manifest signé." >&2
   exit 1
 }
+
+SIGNED_DIR_OVERRIDE="${staging_dir}" \
+  "${REPO_ROOT}/tools/verify-client-fallbacks.sh" \
+  "${CATEGORY_FILTER}" "${PACK_FILTER}"
 
 for relative_path in "${manifest_relatives[@]}"; do
   output_manifest="${OUTPUT_DIR}/${relative_path}"

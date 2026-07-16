@@ -22,4 +22,4 @@ compte concerné, générer une nouvelle paire Ed25519 hors Git, livrer sa clé
 publique dans une version applicative, signer et publier de nouveaux manifests
 avec cette clé, puis retirer l'ancienne clé à l'expiration de sa fenêtre de
 90 jours. Ne jamais tenter de remplacer une signature existante sans nouvelle
-version de manifest et journal de décision.
+révision de manifest, sous un nouveau chemin `-rN.json`, et journal de décision.

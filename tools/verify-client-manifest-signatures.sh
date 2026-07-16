@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SIGNED_DIR="${REPO_ROOT}/signed-manifests"
+SIGNED_DIR="${SIGNED_DIR_OVERRIDE:-${REPO_ROOT}/signed-manifests}"
 PUBLIC_KEY_FILE="${REPO_ROOT}/keys/deencoach-pack-2026-07.pub.pem"
 
 for command in openssl find; do
@@ -31,7 +31,8 @@ while IFS= read -r manifest; do
     -in "${manifest}" -sigfile "${signature}" >/dev/null
   echo "[OK] ${manifest#${REPO_ROOT}/}"
   count=$((count + 1))
-done < <(find "${SIGNED_DIR}" -type f -name '*.json' | sort)
+done < <(find "${SIGNED_DIR}" -type f -name '*.json' \
+  ! -name 'active-revisions.json' | sort)
 
 [[ "${count}" -gt 0 ]] || {
   echo "Erreur : aucun manifest signé trouvé." >&2
