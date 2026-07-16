@@ -31,6 +31,12 @@ Full product, methodology and contact information lives on the official site: **
 | `tools/build-tanzil-text-packs.sh` | Rebuilds the permitted verbatim Tanzil text packs. |
 | `tools/build-quranenc-translation-packs.sh` | Rebuilds the permitted versioned QuranEnc responses without rewriting them. |
 | `signed-manifests/` | Immutable manifests verified by the Flutter client before any artifact URL is used. |
+| `signed-manifests/active-revisions.json` | Active append-only revision selected for each pack. |
+
+Signed manifest paths are append-only. Any change to URLs, fallbacks, validity
+or metadata creates a new `-rN.json` and matching `.sig` pair. Existing pairs
+must never be overwritten because released clients and CDN caches may still
+request them.
 
 ## License
 

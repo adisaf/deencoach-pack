@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "revisions": [
+    {
+      "packId": "quran_text_simple_search",
+      "category": "quran-text",
+      "manifest": "quran-text/quran_text_simple_search-r2.json"
+    },
+    {
+      "packId": "quran_text_uthmani_hafs",
+      "category": "quran-text",
+      "manifest": "quran-text/quran_text_uthmani_hafs-r2.json"
+    },
+    {
+      "packId": "quran_translation_en_hilali_khan",
+      "category": "quran-translations",
+      "manifest": "quran-translations/quran_translation_en_hilali_khan-r2.json"
+    },
+    {
+      "packId": "quran_translation_en_rwwad",
+      "category": "quran-translations",
+      "manifest": "quran-translations/quran_translation_en_rwwad-r2.json"
+    },
+    {
+      "packId": "quran_translation_en_saheeh",
+      "category": "quran-translations",
+      "manifest": "quran-translations/quran_translation_en_saheeh-r2.json"
+    },
+    {
+      "packId": "quran_translation_fr_noor",
+      "category": "quran-translations",
+      "manifest": "quran-translations/quran_translation_fr_noor-r2.json"
+    },
+    {
+      "packId": "quran_translation_fr_rashid",
+      "category": "quran-translations",
+      "manifest": "quran-translations/quran_translation_fr_rashid-r2.json"
+    }
+  ]
+}

@@ -58,13 +58,25 @@ les URLs du manifest, alors que le manifest et sa signature restent publiés sur
 
 ```bash
 ./tools/build-tanzil-text-packs.sh
-./tools/sign-client-manifests.sh quran-text
-./tools/build-quranenc-translation-packs.sh
+MANIFEST_REVISION=r3 ./tools/sign-client-manifests.sh quran-text quran_text_uthmani_hafs
+MANIFEST_REVISION=r3 ./tools/build-quranenc-translation-packs.sh
 ./tools/validate-client-manifests.sh
 ./tools/verify-client-manifest-signatures.sh
+./tools/verify-client-fallbacks.sh
 ./tools/verify-quran-text-pack.sh uploads/quran-text/quran-uthmani-hafs.txt
 ./tools/verify-quranenc-translation-pack.sh quran_translation_fr_noor
 ```
+
+Chaque génération doit utiliser la prochaine révision `rN` disponible. Un
+couple JSON et signature existant ne doit jamais être remplacé. Après
+validation de la nouvelle révision, mettez à jour
+`signed-manifests/active-revisions.json` dans le même commit. La validation
+applique la fraîcheur de 14 jours uniquement aux révisions actives, tout en
+continuant de vérifier le contrat et la signature de toutes les archives.
+
+Le script historique `refresh-signed-manifest-validity.sh` est volontairement
+neutralisé : le renouvellement en place est incompatible avec les chemins
+immuables. Utilisez `just manifest-sign <category> <pack> rN`.
 
 Ne construisez pas une source `conditional`, `written_permission_required` ou
 `source_license_unknown`. Consultez d'abord `docs/SOURCE_RIGHTS_MATRIX.md`.

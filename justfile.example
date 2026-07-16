@@ -28,3 +28,14 @@ release-publish category release_tag:
 
 release-verify-published category release_tag:
     @./tools/release-signed-pack-category.sh verify-published "{{category}}" "{{release_tag}}"
+
+[confirm("Créer une nouvelle révision immuable avec fallbacks amont vérifiés ?")]
+manifest-fallbacks revision="r2":
+    @MANIFEST_REVISION="{{revision}}" ./tools/add-client-manifest-fallbacks.sh
+
+[confirm("Signer une nouvelle révision client sans remplacer un manifest existant ?")]
+manifest-sign category pack revision:
+    @MANIFEST_REVISION="{{revision}}" ./tools/sign-client-manifests.sh "{{category}}" "{{pack}}"
+
+verify-fallbacks category="" pack="":
+    @./tools/verify-client-fallbacks.sh "{{category}}" "{{pack}}"

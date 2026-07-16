@@ -6,12 +6,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SIGNED_DIR="${REPO_ROOT}/signed-manifests"
+SIGNED_DIR="${SIGNED_DIR_OVERRIDE:-${REPO_ROOT}/signed-manifests}"
 CATEGORY_FILTER="${1:-}"
 PACK_FILTER="${2:-}"
 MINIMUM_REMAINING_DAYS="${MINIMUM_REMAINING_DAYS:-14}"
+ACTIVE_REVISIONS_FILE="${SIGNED_DIR}/active-revisions.json"
 
-for command in date jq; do
+for command in date find jq sort; do
   command -v "${command}" >/dev/null 2>&1 || {
     echo "Erreur : '${command}' est requis." >&2
     exit 1
@@ -25,16 +26,76 @@ done
 minimum_remaining_seconds=$((MINIMUM_REMAINING_DAYS * 24 * 60 * 60))
 current_epoch=$(date -u +%s)
 
+if [[ -f "${ACTIVE_REVISIONS_FILE}" ]]; then
+  jq -e '
+    .schemaVersion == 1 and
+    (.revisions as $revisions |
+      ($revisions | type == "array" and length > 0) and
+      ([$revisions[].packId] | unique | length == ($revisions | length)) and
+      ([$revisions[].manifest] | unique | length == ($revisions | length)) and
+      ([$revisions[] |
+      (.packId | test("^[a-z0-9_]+$")) and
+      (.category == "quran-text" or .category == "quran-translations") and
+      (.manifest | test("^(quran-text|quran-translations)/[a-z0-9_]+-r[1-9][0-9]*\\.json$"))
+      ] | all)
+    )
+  ' "${ACTIVE_REVISIONS_FILE}" >/dev/null || {
+    echo 'Erreur : registre des révisions actives invalide.' >&2
+    exit 1
+  }
+  while IFS=$'\t' read -r pack_id category relative_path; do
+    active_path="${SIGNED_DIR}/${relative_path}"
+    [[ -f "${active_path}" && -f "${active_path}.sig" ]] || {
+      echo "Erreur : révision active absente : ${relative_path}." >&2
+      exit 1
+    }
+    jq -e --arg pack_id "${pack_id}" '.packId == $pack_id' \
+      "${active_path}" >/dev/null || {
+      echo "Erreur : packId actif incohérent : ${relative_path}." >&2
+      exit 1
+    }
+    [[ "${relative_path}" =~ /${pack_id}-r[1-9][0-9]*\.json$ ]] || {
+      echo "Erreur : nom de révision actif incohérent : ${relative_path}." >&2
+      exit 1
+    }
+    [[ "${relative_path}" == "${category}/"* ]] || {
+      echo "Erreur : catégorie active incohérente : ${relative_path}." >&2
+      exit 1
+    }
+  done < <(jq -r '.revisions[] | [.packId, .category, .manifest] | @tsv' \
+    "${ACTIVE_REVISIONS_FILE}")
+
+  while IFS= read -r manifest; do
+    manifest_pack_id=$(jq -r '.packId' "${manifest}")
+    jq -e --arg pack_id "${manifest_pack_id}" \
+      '.revisions[] | select(.packId == $pack_id)' \
+      "${ACTIVE_REVISIONS_FILE}" >/dev/null || {
+      echo "Erreur : aucune révision active pour ${manifest_pack_id}." >&2
+      exit 1
+    }
+  done < <(find "${SIGNED_DIR}" -type f -name '*.json' \
+    ! -name 'active-revisions.json' | sort)
+fi
+
 pass_count=0
 fail_count=0
 
 validate_manifest() {
   local path="$1"
   local relative_path="${path#${REPO_ROOT}/}"
+  local signed_relative_path="${path#${SIGNED_DIR}/}"
+  local require_freshness=true
+  if [[ -f "${ACTIVE_REVISIONS_FILE}" ]] &&
+      ! jq -e --arg path "${signed_relative_path}" \
+        '.revisions[] | select(.manifest == $path)' \
+        "${ACTIVE_REVISIONS_FILE}" >/dev/null; then
+    require_freshness=false
+  fi
 
   if ! jq -e \
     --argjson current_epoch "${current_epoch}" \
-    --argjson minimum_remaining_seconds "${minimum_remaining_seconds}" '
+    --argjson minimum_remaining_seconds "${minimum_remaining_seconds}" \
+    --argjson require_freshness "${require_freshness}" '
     (.packId | test("^[a-z0-9_]+$")) and
     (.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
     (.signingKeyId == "deencoach-pack-2026-07") and
@@ -42,7 +103,8 @@ validate_manifest() {
     (.expiresAt | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
     ((.issuedAt | fromdateiso8601) < (.expiresAt | fromdateiso8601)) and
     (((.expiresAt | fromdateiso8601) - (.issuedAt | fromdateiso8601)) <= (90 * 24 * 60 * 60)) and
-    ((.expiresAt | fromdateiso8601) > ($current_epoch + $minimum_remaining_seconds)) and
+    (($require_freshness | not) or
+      ((.expiresAt | fromdateiso8601) > ($current_epoch + $minimum_remaining_seconds))) and
     (.artifacts | type == "array" and length > 0) and
     (.artifacts as $artifacts |
       ([ $artifacts[].itemKey ] | unique | length == ($artifacts | length)) and
@@ -52,6 +114,16 @@ validate_manifest() {
     ([.artifacts[] |
       (.itemKey | type == "string" and length > 0) and
       (.url | test("^https://github.com/adisaf/deencoach-pack/releases/download/")) and
+      ((.fallbackUrls // []) | type == "array" and length <= 3) and
+      (. as $artifact |
+        (($artifact.fallbackUrls // []) | unique | length) ==
+        (($artifact.fallbackUrls // []) | length)) and
+      (. as $artifact | [($artifact.fallbackUrls // [])[] |
+        (type == "string") and
+        test("^https://(quranenc\\.com|tanzil\\.net)(:443)?/[^#]*$") and
+        (contains("@") | not) and
+        (. != $artifact.url)
+      ] | all) and
       (.relativePath | test("^[a-z0-9_]+/[A-Za-z0-9_.-]+$")) and
       (.fileName | test("^[A-Za-z0-9_.-]+$")) and
       (. as $artifact | $artifact.relativePath | endswith("/" + $artifact.fileName)) and

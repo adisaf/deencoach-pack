@@ -60,6 +60,17 @@
       "description": "URL HTTPS de l'artefact immuable à télécharger, typiquement une GitHub Release.",
       "pattern": "^https://"
     },
+    "fallbackUrls": {
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "description": "Copies byte-for-byte optionnelles de l'artefact principal. Chaque URL doit être explicitement validée contre le SHA-256 publié.",
+      "items": {
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https://"
+      }
+    },
     "artifactFormat": {
       "type": "string",
       "description": "Format de l'artefact distribué. `raw` est réservé aux fichiers unitaires consommés directement par l'application ; `zip` est requis lorsqu'une extraction est nécessaire.",

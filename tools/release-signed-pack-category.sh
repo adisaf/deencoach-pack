@@ -10,6 +10,7 @@ readonly EXPECTED_GIT_AUTHOR_NAME='Fawaz ADISA'
 readonly EXPECTED_GIT_AUTHOR_EMAIL='adisaf@programmer.net'
 readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly SIGNED_MANIFESTS_DIR="${REPO_ROOT}/signed-manifests"
+readonly ACTIVE_REVISIONS_FILE="${SIGNED_MANIFESTS_DIR}/active-revisions.json"
 readonly PUBLIC_KEY_PATH='keys/deencoach-pack-2026-07.pub.pem'
 
 ACTION="${1:-}"
@@ -69,13 +70,20 @@ validate_arguments() {
 }
 
 collect_manifests() {
-  local manifest
+  local relative_path manifest
   local category_dir="${SIGNED_MANIFESTS_DIR}/${CATEGORY}"
 
   [[ -d "${category_dir}" ]] || fail "manifests absents pour ${CATEGORY}."
-  while IFS= read -r manifest; do
+  [[ -f "${ACTIVE_REVISIONS_FILE}" ]] || {
+    fail 'registre signed-manifests/active-revisions.json absent.'
+  }
+  while IFS= read -r relative_path; do
+    manifest="${SIGNED_MANIFESTS_DIR}/${relative_path}"
+    [[ -f "${manifest}" ]] || fail "manifest actif absent : ${relative_path}."
     MANIFESTS+=("${manifest}")
-  done < <(find "${category_dir}" -maxdepth 1 -type f -name '*.json' | sort)
+  done < <(jq -r --arg category "${CATEGORY}" \
+    '.revisions[] | select(.category == $category) | .manifest' \
+    "${ACTIVE_REVISIONS_FILE}" | sort)
 
   [[ "${#MANIFESTS[@]}" -gt 0 ]] || {
     fail "aucun manifest signé pour ${CATEGORY}."
@@ -175,7 +183,8 @@ verify_published_manifest_sources() {
   local file_path relative_path
 
   git fetch --quiet origin main
-  for file_path in "${MANIFESTS[@]}" "${PUBLIC_KEY_PATH/#/${REPO_ROOT}/}"; do
+  for file_path in "${MANIFESTS[@]}" "${ACTIVE_REVISIONS_FILE}" \
+    "${PUBLIC_KEY_PATH/#/${REPO_ROOT}/}"; do
     for file_path in "${file_path}" "${file_path}.sig"; do
       [[ "${file_path}" == *.sig && ! -f "${file_path}" ]] && continue
       relative_path="${file_path#${REPO_ROOT}/}"

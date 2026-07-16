@@ -39,6 +39,13 @@ validate_manifest() {
     (.category | type == "string" and length > 0) and
     (.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
     (.url | test("^https://")) and
+    ((.fallbackUrls // []) as $fallbacks |
+      ($fallbacks | type == "array" and length <= 3) and
+      (($fallbacks | unique | length) == ($fallbacks | length)) and
+      ($fallbacks | all(
+        type == "string" and
+        test("^https://[^@/#]+(:443)?/[^#]*$")
+      ))) and
     (.sha256 | test("^[a-f0-9]{64}$")) and
     (.sizeCompressed | type == "number" and . > 0) and
     (.sizeUncompressed | type == "number" and . > 0) and
