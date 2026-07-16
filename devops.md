@@ -5,7 +5,7 @@
 - Projet : Deen Coach Pack Registry
 - Criticité globale : critique
 - Date de création : 2026-07-13
-- Dernière mise à jour : 2026-07-13
+- Dernière mise à jour : 2026-07-16
 - Propriétaire : Fawaz ADISA
 - Contact astreinte : non défini
 
@@ -51,7 +51,7 @@
 ## Sécurité
 
 - Secrets : clé privée Ed25519 dans le trousseau macOS, jamais dans Git ni GitHub Actions
-- Intégrité mobile : signature Ed25519 du manifest, SHA-256 et taille par artefact avant installation
+- Intégrité mobile : index actif et manifests signés Ed25519, séquence anti-rollback, SHA-256 et taille par artefact avant installation
 - Publication : compte GitHub et identité Git Fawaz ADISA vérifiés par le runbook
 - Dépôt public : garde anti-secrets, PR obligatoire, statut `Pack integrity`
   strict, force-push et suppression interdits, Actions limitées aux actions
@@ -82,3 +82,4 @@
 | --- | --- | --- | --- |
 | 2026-07-13 | Ajout du runbook public sécurisé, de la CI et du contexte opératoire | Fawaz ADISA | Stabilisation 2026-H2 |
 | 2026-07-13 | Protection GitHub de `main`, permissions Actions minimales et expiration des manifests à 90 jours | Fawaz ADISA | Stabilisation 2026-H2 |
+| 2026-07-16 | Signature Ed25519 du registre actif et séquence anti-rollback consommable par les clients mobiles | Fawaz ADISA | Correctif régressions packs |

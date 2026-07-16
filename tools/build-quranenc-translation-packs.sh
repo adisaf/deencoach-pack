@@ -24,6 +24,8 @@ RETRIEVED_AT="$(date -u +%F)"
 PACK_VERSION="${RELEASE_TAG#quranenc-translations-v}"
 MANIFEST_VALIDITY_DAYS="${MANIFEST_VALIDITY_DAYS:-90}"
 MAX_MANIFEST_VALIDITY_DAYS=90
+DOWNLOAD_TOOL="${REPO_ROOT}/tools/download-verified-https.sh"
+QURAN_STRUCTURE="${REPO_ROOT}/tools/quran-structure.tsv"
 
 [[ "${RELEASE_TAG}" == "quranenc-translations-v${PACK_VERSION}" &&
   "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
@@ -36,7 +38,7 @@ MAX_MANIFEST_VALIDITY_DAYS=90
   exit 1
 }
 
-for command in base64 cp curl date dirname jq mkdir mktemp mv openssl python3 rm security shasum wc; do
+for command in awk base64 bash cp curl date dirname jq mkdir mktemp mv openssl python3 rm security shasum wc; do
   command -v "${command}" >/dev/null 2>&1 || {
     echo "Erreur : '${command}' est requis." >&2
     exit 1
@@ -63,9 +65,10 @@ PY
 mkdir -p "${OUTPUT_DIR}" "${SIGNED_DIR}"
 metadata_path="${OUTPUT_DIR}/quranenc-translations-list.json"
 terms_path="${OUTPUT_DIR}/QURANENC_TERMS.html"
-curl -fsSL 'https://quranenc.com/api/v1/translations/list/?localization=en' \
-  -o "${metadata_path}"
-curl -fsSL "${TERMS_URL}" -o "${terms_path}"
+bash "${DOWNLOAD_TOOL}" \
+  'https://quranenc.com/api/v1/translations/list/?localization=en' \
+  "${metadata_path}" 5242880 quranenc.com
+bash "${DOWNLOAD_TOOL}" "${TERMS_URL}" "${terms_path}" 5242880 quranenc.com
 terms_sha=$(shasum -a 256 "${terms_path}" | awk '{print $1}')
 
 private_key_file=$(mktemp /private/tmp/deencoach-quranenc-sign.XXXXXX)
@@ -133,12 +136,21 @@ build_pack() {
     response_url="https://quranenc.com/api/v1/translation/sura/${translation_key}/${surah_number}"
     # Re-télécharger chaque réponse rend `retrievedAt` exact et évite de
     # republier silencieusement un cache dont la version source a évolué.
-    curl --fail --location --retry 3 --retry-all-errors \
-      --connect-timeout 10 --max-time 120 --silent --show-error \
-      "${response_url}" -o "${pack_dir}/${file}"
-    jq -e --arg surah "${surah_number}" '
-      (.result | type == "array" and length > 0) and
-      ([.result[] | .sura == $surah] | all)
+    bash "${DOWNLOAD_TOOL}" "${response_url}" "${pack_dir}/${file}" \
+      2097152 quranenc.com
+    local expected_ayah_count
+    expected_ayah_count=$(awk -v surah="${surah_number}" \
+      '$1 == surah { print $2 }' "${QURAN_STRUCTURE}")
+    [[ -n "${expected_ayah_count}" ]] || {
+      echo "Erreur : structure coranique absente pour la sourate ${surah_number}." >&2
+      return 1
+    }
+    jq -e --arg surah "${surah_number}" \
+      --argjson expected_count "${expected_ayah_count}" '
+      (.result | type == "array" and length == $expected_count) and
+      ([.result[] | (.sura | tostring) == $surah] | all) and
+      ([.result[] | (.aya | tonumber)] == [range(1; $expected_count + 1)]) and
+      ([.result[] | (.translation | type == "string" and length > 0)] | all)
     ' "${pack_dir}/${file}" >/dev/null || {
       echo "Erreur : réponse invalide pour ${translation_key}/${surah_number}." >&2
       return 1

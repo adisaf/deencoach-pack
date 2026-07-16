@@ -1,40 +1,44 @@
 {
-  "schemaVersion": 1,
+  "expiresAt": "2026-10-14T05:34:48Z",
+  "issuedAt": "2026-07-16T05:34:48Z",
   "revisions": [
     {
-      "packId": "quran_text_simple_search",
       "category": "quran-text",
-      "manifest": "quran-text/quran_text_simple_search-r2.json"
+      "manifest": "quran-text/quran_text_simple_search-r2.json",
+      "packId": "quran_text_simple_search"
     },
     {
-      "packId": "quran_text_uthmani_hafs",
       "category": "quran-text",
-      "manifest": "quran-text/quran_text_uthmani_hafs-r2.json"
+      "manifest": "quran-text/quran_text_uthmani_hafs-r2.json",
+      "packId": "quran_text_uthmani_hafs"
     },
     {
-      "packId": "quran_translation_en_hilali_khan",
       "category": "quran-translations",
-      "manifest": "quran-translations/quran_translation_en_hilali_khan-r2.json"
+      "manifest": "quran-translations/quran_translation_en_hilali_khan-r2.json",
+      "packId": "quran_translation_en_hilali_khan"
     },
     {
-      "packId": "quran_translation_en_rwwad",
       "category": "quran-translations",
-      "manifest": "quran-translations/quran_translation_en_rwwad-r2.json"
+      "manifest": "quran-translations/quran_translation_en_rwwad-r2.json",
+      "packId": "quran_translation_en_rwwad"
     },
     {
-      "packId": "quran_translation_en_saheeh",
       "category": "quran-translations",
-      "manifest": "quran-translations/quran_translation_en_saheeh-r2.json"
+      "manifest": "quran-translations/quran_translation_en_saheeh-r2.json",
+      "packId": "quran_translation_en_saheeh"
     },
     {
-      "packId": "quran_translation_fr_noor",
       "category": "quran-translations",
-      "manifest": "quran-translations/quran_translation_fr_noor-r2.json"
+      "manifest": "quran-translations/quran_translation_fr_noor-r2.json",
+      "packId": "quran_translation_fr_noor"
     },
     {
-      "packId": "quran_translation_fr_rashid",
       "category": "quran-translations",
-      "manifest": "quran-translations/quran_translation_fr_rashid-r2.json"
+      "manifest": "quran-translations/quran_translation_fr_rashid-r2.json",
+      "packId": "quran_translation_fr_rashid"
     }
-  ]
+  ],
+  "schemaVersion": 1,
+  "sequence": 1,
+  "signingKeyId": "deencoach-pack-2026-07"
 }

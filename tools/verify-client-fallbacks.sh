@@ -20,7 +20,7 @@ SIGNED_DIR_OVERRIDE="${SIGNED_DIR}" \
 SIGNED_DIR_OVERRIDE="${SIGNED_DIR}" \
   "${REPO_ROOT}/tools/verify-client-manifest-signatures.sh"
 
-temporary_dir=$(mktemp -d /private/tmp/deencoach-pack-fallbacks-verify.XXXXXX)
+temporary_dir=$(mktemp -d "${TMPDIR:-/tmp}/deencoach-pack-fallbacks-verify.XXXXXX")
 cleanup() {
   rm -rf "${temporary_dir}"
 }
@@ -42,11 +42,8 @@ while IFS= read -r manifest; do
   while IFS=$'\t' read -r item_key expected_sha expected_bytes fallback_url; do
     [[ -n "${fallback_url}" ]] || continue
     target="${temporary_dir}/${pack_id}-${item_key}-${verified_count}"
-    curl --fail --location --retry 3 --retry-all-errors \
-      --proto '=https' --proto-redir '=https' \
-      --connect-timeout 10 --max-time 120 --silent --show-error \
-      --max-filesize "${expected_bytes}" \
-      "${fallback_url}" --output "${target}"
+    bash "${REPO_ROOT}/tools/download-verified-https.sh" \
+      "${fallback_url}" "${target}" "${expected_bytes}"
     actual_bytes=$(wc -c < "${target}" | tr -d ' ')
     [[ "${actual_bytes}" == "${expected_bytes}" ]] || {
       echo "Erreur : taille fallback invalide pour ${pack_id}/${item_key}." >&2

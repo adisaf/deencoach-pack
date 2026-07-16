@@ -31,8 +31,7 @@ while IFS= read -r manifest; do
     -in "${manifest}" -sigfile "${signature}" >/dev/null
   echo "[OK] ${manifest#${REPO_ROOT}/}"
   count=$((count + 1))
-done < <(find "${SIGNED_DIR}" -type f -name '*.json' \
-  ! -name 'active-revisions.json' | sort)
+done < <(find "${SIGNED_DIR}" -type f -name '*.json' | sort)
 
 [[ "${count}" -gt 0 ]] || {
   echo "Erreur : aucun manifest signé trouvé." >&2

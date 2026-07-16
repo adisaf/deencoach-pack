@@ -68,9 +68,16 @@ MANIFEST_REVISION=r3 ./tools/build-quranenc-translation-packs.sh
 ```
 
 Chaque génération doit utiliser la prochaine révision `rN` disponible. Un
-couple JSON et signature existant ne doit jamais être remplacé. Après
-validation de la nouvelle révision, mettez à jour
-`signed-manifests/active-revisions.json` dans le même commit. La validation
+couple JSON et signature existant ne doit jamais être remplacé. Le manifest
+candidat et sa signature sont d'abord commités sur `origin/main`, sans modifier
+le registre actif. La release est ensuite créée et vérifiée. Seulement après
+ce succès, mettez à jour `signed-manifests/active-revisions.json`, puis exécutez
+`just manifest-index-sign` et publiez ce second commit. L'index signé porte une
+`sequence` monotone utilisée par le client pour refuser les retours arrière.
+Le signataire authentifie le candidat déjà présent sur `origin/main`, refuse un
+downgrade SemVer et re-télécharge tous ses artefacts publics avant de produire
+la nouvelle signature du registre.
+La validation
 applique la fraîcheur de 14 jours uniquement aux révisions actives, tout en
 continuant de vérifier le contrat et la signature de toutes les archives.
 
@@ -103,16 +110,19 @@ cp justfile.example justfile
 Il délègue les contrôles reproductibles au script versionné
 `tools/release-signed-pack-category.sh`.
 
-Avant la publication, les manifests et signatures doivent être commités puis
-publiés sur `origin/main`. La pré-vérification échoue sinon, afin que l’URL
-du manifest consommé par Flutter ne puisse jamais désigner un artefact non
-traçable dans le dépôt.
+Avant la publication, les manifests candidats et signatures doivent être
+commités puis publiés sur `origin/main`, mais ils ne doivent pas encore être
+référencés par le registre actif. La pré-vérification échoue sinon. Cette
+séquence empêche le client Flutter de voir une URL d'artefact avant que la
+release correspondante existe et ait passé le contrôle public.
 
 ```bash
 just doctor
 just release-verify quran-text quran-text-v1.0.0
 just release-tag quran-text quran-text-v1.0.0
 just release-publish quran-text quran-text-v1.0.0
+just release-verify-published quran-text quran-text-v1.0.0
+just manifest-index-sign
 ```
 
 Pour les traductions QuranEnc déjà admissibles :
@@ -121,13 +131,16 @@ Pour les traductions QuranEnc déjà admissibles :
 just release-verify quran-translations quranenc-translations-v1.0.0
 just release-tag quran-translations quranenc-translations-v1.0.0
 just release-publish quran-translations quranenc-translations-v1.0.0
+just release-verify-published quran-translations quranenc-translations-v1.0.0
+just manifest-index-sign
 ```
 
 `release-tag` exige l’identité Git de Fawaz ADISA, crée un tag annoté pointant
-sur `origin/main` et le publie. `release-publish` exige ce tag déjà publié,
-refuse une release existante, puis retélécharge chaque artefact public et
-contrôle son SHA-256 et sa taille. Ce dernier contrôle est la preuve que
-l’application mobile peut récupérer les URL réellement publiées.
+sur le commit des manifests candidats et le publie. `release-publish` exige ce
+tag déjà publié, refuse une release existante, puis retélécharge chaque
+artefact public et contrôle son SHA-256 et sa taille. Ce dernier contrôle est
+la preuve que l’application mobile peut récupérer les URL réellement publiées.
+L'activation du registre est toujours le dernier geste, dans un commit séparé.
 
 Pour rejouer uniquement ce contrôle après coup :
 
