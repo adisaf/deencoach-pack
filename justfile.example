@@ -11,6 +11,8 @@ doctor:
     @command -v openssl >/dev/null
     @command -v curl >/dev/null
     @command -v shasum >/dev/null
+    @command -v python3 >/dev/null
+    @command -v security >/dev/null
     @gh auth status --hostname github.com
     @./tools/guard-public-repository.sh
     @echo "doctor: OK"
@@ -36,6 +38,11 @@ manifest-fallbacks revision="r2":
 [confirm("Signer une nouvelle révision client sans remplacer un manifest existant ?")]
 manifest-sign category pack revision:
     @MANIFEST_REVISION="{{revision}}" ./tools/sign-client-manifests.sh "{{category}}" "{{pack}}"
+
+# Signe le registre actif seulement après publication et vérification de la release.
+[confirm("Signer et activer le registre des révisions client ?")]
+manifest-index-sign:
+    @./tools/sign-active-revisions.sh
 
 verify-fallbacks category="" pack="":
     @./tools/verify-client-fallbacks.sh "{{category}}" "{{pack}}"

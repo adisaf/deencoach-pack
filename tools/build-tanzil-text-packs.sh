@@ -21,6 +21,7 @@ UTHMANI_URL="https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&ta
 SIMPLE_URL="https://tanzil.net/pub/download/index.php?marks=false&sajdah=false&tatweel=false&quranType=simple-clean&outType=txt-2&agree=true"
 ATTRIBUTION="Tanzil Quran Text, Copyright (C) 2007-2021 Tanzil Project"
 RETRIEVED_AT="$(date -u +%F)"
+DOWNLOAD_TOOL="${REPO_ROOT}/tools/download-verified-https.sh"
 
 [[ "${RELEASE_TAG}" == "quran-text-v${PACK_VERSION}" &&
   "${PACK_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
@@ -28,7 +29,7 @@ RETRIEVED_AT="$(date -u +%F)"
   exit 1
 }
 
-for command in curl date jq shasum wc; do
+for command in bash curl date jq python3 shasum wc; do
   command -v "${command}" >/dev/null 2>&1 || {
     echo "Erreur : '${command}' est requis." >&2
     exit 1
@@ -38,7 +39,7 @@ done
 mkdir -p "${OUTPUT_DIR}" "${MANIFEST_DIR}"
 
 license_path="${OUTPUT_DIR}/TANZIL_TEXT_LICENSE.txt"
-curl -fsSL "${LICENSE_URL}" -o "${license_path}"
+bash "${DOWNLOAD_TOOL}" "${LICENSE_URL}" "${license_path}" 5242880 tanzil.net
 license_sha=$(shasum -a 256 "${license_path}" | awk '{print $1}')
 
 build_pack() {
@@ -54,7 +55,7 @@ build_pack() {
 
   local artifact_path="${OUTPUT_DIR}/${filename}"
   local manifest_path="${MANIFEST_DIR}/${id}.json"
-  curl -fsSL "${source_url}" -o "${artifact_path}"
+  bash "${DOWNLOAD_TOOL}" "${source_url}" "${artifact_path}" 10485760 tanzil.net
 
   local artifact_sha size_bytes
   artifact_sha=$(shasum -a 256 "${artifact_path}" | awk '{print $1}')

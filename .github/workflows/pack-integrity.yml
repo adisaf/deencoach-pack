@@ -27,3 +27,42 @@ jobs:
         run: |
           ./tools/validate-client-manifests.sh
           ./tools/verify-client-manifest-signatures.sh
+          ./tools/verify-license-snapshots.sh
+      - name: Validate canonical Quran structure authority
+        run: |
+          summary=$(awk '!/^#/ {surahs++; ayahs += $2} END {print surahs ":" ayahs}' tools/quran-structure.tsv)
+          test "$summary" = '114:6236'
+          echo '56507b865b7c940c98489ee4dbbbb1db49504a1a9dcb9d20088309c727d1ef42  tools/quran-structure.tsv' | shasum -a 256 --check
+      - name: Smoke-test public signed channel
+        if: github.event_name == 'schedule'
+        run: |
+          temporary_dir=$(mktemp -d)
+          trap 'rm -rf "$temporary_dir"' EXIT
+          raw_base='https://raw.githubusercontent.com/adisaf/deencoach-pack/main/signed-manifests'
+          rotation_slot=$(( $(date -u +%s) / 86400 % 7 ))
+          ./tools/download-verified-https.sh "$raw_base/active-revisions.json" "$temporary_dir/index.json" 131072
+          ./tools/download-verified-https.sh "$raw_base/active-revisions.json.sig" "$temporary_dir/index.sig" 64
+          openssl pkeyutl -verify -rawin -pubin -inkey keys/deencoach-pack-2026-07.pub.pem \
+            -in "$temporary_dir/index.json" -sigfile "$temporary_dir/index.sig"
+          while IFS=$'\t' read -r pack_id manifest_path; do
+            manifest="$temporary_dir/$pack_id.json"
+            signature="$manifest.sig"
+            ./tools/download-verified-https.sh "$raw_base/$manifest_path" "$manifest" 524288
+            ./tools/download-verified-https.sh "$raw_base/$manifest_path.sig" "$signature" 64
+            openssl pkeyutl -verify -rawin -pubin -inkey keys/deencoach-pack-2026-07.pub.pem \
+              -in "$manifest" -sigfile "$signature"
+            while IFS=$'\t' read -r item_key url expected_bytes expected_sha; do
+              artifact="$temporary_dir/$pack_id-$item_key.artifact"
+              ./tools/download-verified-https.sh "$url" "$artifact" "$expected_bytes" \
+                'github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,github-releases.githubusercontent.com'
+              echo "$expected_sha  $artifact" | shasum -a 256 --check
+            done < <(
+              jq -r --argjson slot "$rotation_slot" '
+                .artifacts as $artifacts |
+                $artifacts | to_entries[] |
+                select(($artifacts | length) <= 7 or (.key % 7) == $slot) |
+                [.value.itemKey, .value.url, (.value.expectedBytes | tostring), .value.sha256] |
+                @tsv
+              ' "$manifest"
+            )
+          done < <(jq -r '.revisions[] | [.packId, .manifest] | @tsv' "$temporary_dir/index.json")

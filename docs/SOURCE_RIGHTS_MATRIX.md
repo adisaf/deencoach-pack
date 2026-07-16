@@ -58,6 +58,11 @@ source sont aussi inclus dans l'archive quand la source l'exige. Un changement
 de version amont déclenche une nouvelle revue religieuse, juridique et de
 checksum avant publication.
 
+Les snapshots exacts Tanzil et QuranEnc sont archivés sous forme gzip
+déterministe dans `provenance/licenses/`. Le SHA-256 inscrit dans les manifests
+porte sur les octets décompressés. La CI vérifie l'intégrité des archives et
+l'égalité de ces digests pour chaque manifest concerné.
+
 ## Décisions de migration
 
 1. Construire les deux textes Tanzil et les cinq traductions QuranEnc dont la

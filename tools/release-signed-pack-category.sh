@@ -23,6 +23,9 @@ TEMPORARY_PATHS=()
 
 cleanup() {
   local temporary_path
+  if [[ "${#TEMPORARY_PATHS[@]}" -eq 0 ]]; then
+    return
+  fi
   for temporary_path in "${TEMPORARY_PATHS[@]}"; do
     rm -rf "${temporary_path}"
   done
@@ -37,7 +40,7 @@ fail() {
 
 require_commands() {
   local command_name
-  for command_name in cmp curl find gh git jq shasum sort uniq wc; do
+  for command_name in awk basename cmp curl find gh git grep jq mktemp printf python3 shasum sort uniq wc; do
     command -v "${command_name}" >/dev/null 2>&1 || {
       fail "'${command_name}' est requis."
     }
@@ -70,23 +73,45 @@ validate_arguments() {
 }
 
 collect_manifests() {
-  local relative_path manifest
+  local manifest
   local category_dir="${SIGNED_MANIFESTS_DIR}/${CATEGORY}"
 
   [[ -d "${category_dir}" ]] || fail "manifests absents pour ${CATEGORY}."
-  [[ -f "${ACTIVE_REVISIONS_FILE}" ]] || {
-    fail 'registre signed-manifests/active-revisions.json absent.'
-  }
-  while IFS= read -r relative_path; do
-    manifest="${SIGNED_MANIFESTS_DIR}/${relative_path}"
-    [[ -f "${manifest}" ]] || fail "manifest actif absent : ${relative_path}."
+  while IFS= read -r manifest; do
     MANIFESTS+=("${manifest}")
-  done < <(jq -r --arg category "${CATEGORY}" \
-    '.revisions[] | select(.category == $category) | .manifest' \
-    "${ACTIVE_REVISIONS_FILE}" | sort)
+  done < <(python3 - "${category_dir}" "${PACK_VERSION}" <<'PY'
+import json
+from pathlib import Path
+import re
+import sys
+
+category_dir = Path(sys.argv[1])
+target_version = sys.argv[2]
+selected = {}
+
+for path in category_dir.glob('*.json'):
+    match = re.fullmatch(r'([a-z0-9_]+)-r([1-9][0-9]*)\.json', path.name)
+    if match is None:
+        continue
+    with path.open(encoding='utf-8') as handle:
+        manifest = json.load(handle)
+    if manifest.get('version') != target_version:
+        continue
+    pack_id = manifest.get('packId')
+    if pack_id != match.group(1):
+        raise SystemExit(f'packId incohérent dans {path}')
+    revision = int(match.group(2))
+    previous = selected.get(pack_id)
+    if previous is None or revision > previous[0]:
+        selected[pack_id] = (revision, path)
+
+for pack_id in sorted(selected):
+    print(selected[pack_id][1])
+PY
+  )
 
   [[ "${#MANIFESTS[@]}" -gt 0 ]] || {
-    fail "aucun manifest signé pour ${CATEGORY}."
+    fail "aucun manifest candidat immuable pour ${CATEGORY} v${PACK_VERSION}."
   }
 }
 
@@ -174,7 +199,7 @@ validate_local_contract() {
         "$(resolve_asset_path "$(jq -r '.packId' "${manifest}")" "$(jq -r '.artifacts[0].fileName' "${manifest}")")"
     else
       "${REPO_ROOT}/tools/verify-quranenc-translation-pack.sh" \
-        "$(jq -r '.packId' "${manifest}")"
+        "$(jq -r '.packId' "${manifest}")" "${manifest}"
     fi
   done
 }
@@ -183,8 +208,7 @@ verify_published_manifest_sources() {
   local file_path relative_path
 
   git fetch --quiet origin main
-  for file_path in "${MANIFESTS[@]}" "${ACTIVE_REVISIONS_FILE}" \
-    "${PUBLIC_KEY_PATH/#/${REPO_ROOT}/}"; do
+  for file_path in "${MANIFESTS[@]}" "${PUBLIC_KEY_PATH/#/${REPO_ROOT}/}"; do
     for file_path in "${file_path}" "${file_path}.sig"; do
       [[ "${file_path}" == *.sig && ! -f "${file_path}" ]] && continue
       relative_path="${file_path#${REPO_ROOT}/}"
@@ -195,6 +219,27 @@ verify_published_manifest_sources() {
         fail "${relative_path} local diffère de la version sur origin/main."
       }
     done
+  done
+}
+
+assert_candidates_not_active() {
+  local manifest relative_path
+  local published_index
+
+  published_index="$(mktemp)"
+  TEMPORARY_PATHS+=("${published_index}")
+  if ! git cat-file -e 'origin/main:signed-manifests/active-revisions.json'; then
+    return
+  fi
+  git show 'origin/main:signed-manifests/active-revisions.json' > \
+    "${published_index}"
+  for manifest in "${MANIFESTS[@]}"; do
+    relative_path="${manifest#${SIGNED_MANIFESTS_DIR}/}"
+    if jq -e --arg path "${relative_path}" \
+      '.revisions[]? | select(.manifest == $path)' \
+      "${published_index}" >/dev/null; then
+      fail "le manifest candidat ${relative_path} est déjà actif avant publication de sa release."
+    fi
   done
 }
 
@@ -225,6 +270,16 @@ assert_git_identity() {
   }
   [[ "${author_email}" == "${EXPECTED_GIT_AUTHOR_EMAIL}" ]] || {
     fail "email Git inattendu : ${author_email}."
+  }
+}
+
+assert_published_clean_checkout() {
+  git fetch --quiet origin main
+  [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || {
+    fail 'HEAD doit correspondre exactement à origin/main avant publication.'
+  }
+  [[ -z "$(git status --porcelain)" ]] || {
+    fail 'le worktree doit être propre avant publication.'
   }
 }
 
@@ -299,9 +354,9 @@ verify_remote_assets() {
   for manifest in "${MANIFESTS[@]}"; do
     while IFS=$'\t' read -r pack_id file_name expected_sha expected_bytes url; do
       downloaded_path="${temporary_dir}/${pack_id}-${file_name}"
-      curl --fail --location --retry 3 --retry-all-errors \
-        --connect-timeout 10 --max-time 120 --silent --show-error \
-        "${url}" --output "${downloaded_path}" || {
+      bash "${REPO_ROOT}/tools/download-verified-https.sh" \
+        "${url}" "${downloaded_path}" "${expected_bytes}" \
+        'github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,github-releases.githubusercontent.com' || {
         fail "téléchargement public échoué : ${url}."
       }
       actual_sha="$(shasum -a 256 "${downloaded_path}" | awk '{print $1}')"
@@ -323,7 +378,7 @@ verify_remote_assets() {
 }
 
 publish_release() {
-  local notes_file
+  local notes_file draft_dir asset downloaded
 
   notes_file="$(mktemp)"
   TEMPORARY_PATHS+=("${notes_file}")
@@ -332,9 +387,31 @@ publish_release() {
   gh release create "${RELEASE_TAG}" \
     --repo "${EXPECTED_REPOSITORY}" \
     --verify-tag \
+    --draft \
     --title "Deen Coach packs ${RELEASE_TAG}" \
     --notes-file "${notes_file}" \
     "${ASSETS[@]}"
+
+  draft_dir="$(mktemp -d)"
+  TEMPORARY_PATHS+=("${draft_dir}")
+  for asset in "${ASSETS[@]}"; do
+    if ! gh release download "${RELEASE_TAG}" \
+        --repo "${EXPECTED_REPOSITORY}" \
+        --pattern "$(basename "${asset}")" \
+        --dir "${draft_dir}"; then
+      gh release delete "${RELEASE_TAG}" \
+        --repo "${EXPECTED_REPOSITORY}" --yes >/dev/null
+      fail 'vérification de la draft impossible, draft supprimée.'
+    fi
+    downloaded="${draft_dir}/$(basename "${asset}")"
+    if ! cmp -s "${asset}" "${downloaded}"; then
+      gh release delete "${RELEASE_TAG}" \
+        --repo "${EXPECTED_REPOSITORY}" --yes >/dev/null
+      fail 'un artefact de la draft diffère du fichier validé, draft supprimée.'
+    fi
+  done
+  gh release edit "${RELEASE_TAG}" \
+    --repo "${EXPECTED_REPOSITORY}" --draft=false
 }
 
 main() {
@@ -349,12 +426,15 @@ main() {
       validate_local_contract
       verify_published_manifest_sources
       verify_github_target
+      assert_candidates_not_active
       echo "[OK] pré-vérification réussie : ${CATEGORY} est publiable sous ${RELEASE_TAG}."
       ;;
     tag)
       validate_local_contract
       verify_published_manifest_sources
       verify_github_target
+      assert_published_clean_checkout
+      assert_candidates_not_active
       create_annotated_tag
       echo "[OK] tag annoté ${RELEASE_TAG} publié."
       ;;
@@ -362,8 +442,10 @@ main() {
       validate_local_contract
       verify_published_manifest_sources
       verify_github_target
+      assert_published_clean_checkout
       assert_release_absent
       assert_published_annotated_tag
+      assert_candidates_not_active
       publish_release
       verify_remote_assets
       echo "[OK] release ${RELEASE_TAG} publiée et vérifiée."

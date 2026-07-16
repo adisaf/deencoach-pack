@@ -15,12 +15,27 @@ if [[ "$#" -ne 1 ]]; then
 fi
 
 file_path="$1"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+QURAN_STRUCTURE="${REPO_ROOT}/tools/quran-structure.tsv"
 if [[ ! -f "${file_path}" ]]; then
   echo "Erreur : fichier introuvable : ${file_path}" >&2
   exit 66
 fi
+if [[ ! -f "${QURAN_STRUCTURE}" ]]; then
+  echo "Erreur : structure coranique introuvable : ${QURAN_STRUCTURE}" >&2
+  exit 66
+fi
 
 awk -F'|' '
+  NR == FNR {
+    split($0, structureFields, /[[:space:]]+/)
+    if (structureFields[1] ~ /^[1-9][0-9]*$/ && structureFields[2] ~ /^[1-9][0-9]*$/) {
+      expected[structureFields[1]] = structureFields[2]
+      expectedSurahs++
+      expectedTotal += structureFields[2]
+    }
+    next
+  }
   BEGIN { valid = 0; comments = 0; invalid = 0; first = ""; last = "" }
   /^$/ { next }
   /^#/ { comments++; next }
@@ -29,16 +44,32 @@ awk -F'|' '
     next
   }
   {
-    key = $1 "|" $2
+    surah = $1 + 0
+    ayah = $2 + 0
+    key = surah "|" ayah
+    if (!(surah in expected) || ayah < 1 || ayah > expected[surah]) invalid++
     if (seen[key]++) duplicates++
+    if (valid > 0) {
+      sameSurahSequence = surah == previousSurah && ayah == previousAyah + 1
+      nextSurahSequence = surah == previousSurah + 1 && \
+        previousAyah == expected[previousSurah] && ayah == 1
+      if (!sameSurahSequence && !nextSurahSequence) outOfOrder++
+    }
     if (first == "") first = key
     last = key
+    perSurah[surah]++
+    previousSurah = surah
+    previousAyah = ayah
     valid++
   }
   END {
-    printf("versets=%d commentaires=%d invalides=%d doublons=%d premier=%s dernier=%s\n", valid, comments, invalid, duplicates, first, last)
-    if (valid != 6236 || comments == 0 || invalid != 0 || duplicates != 0 || first != "1|1" || last != "114|6") {
+    incomplete = 0
+    for (surah = 1; surah <= 114; surah++) {
+      if (perSurah[surah] != expected[surah]) incomplete++
+    }
+    printf("versets=%d commentaires=%d invalides=%d doublons=%d ordre=%d sourates_incompletes=%d premier=%s dernier=%s\n", valid, comments, invalid, duplicates, outOfOrder, incomplete, first, last)
+    if (expectedSurahs != 114 || expectedTotal != 6236 || valid != 6236 || comments == 0 || invalid != 0 || duplicates != 0 || outOfOrder != 0 || incomplete != 0 || first != "1|1" || last != "114|6") {
       exit 1
     }
   }
-' "${file_path}"
+' "${QURAN_STRUCTURE}" "${file_path}"
