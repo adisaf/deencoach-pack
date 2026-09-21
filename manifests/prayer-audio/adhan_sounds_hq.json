@@ -2,24 +2,24 @@
   "$schema": "../../schemas/pack-manifest.schema.json",
   "id": "adhan_sounds_hq",
   "category": "prayer_audio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": {
-    "fr": "Adhans complets",
-    "en": "Full-length adhans",
-    "ar": "الأذان كاملا"
+    "fr": "Adhan - 12 muezzins",
+    "en": "Adhan - 12 muezzins",
+    "ar": "الأذان - 12 مؤذنا"
   },
   "description": {
-    "fr": "Les treize adhans intégraux, courtoisie d'Assabile, pour la pré-écoute hors ligne. Facultatif : le son de notification vient du pack d'amorces.",
-    "en": "The thirteen full-length adhans, courtesy of Assabile, for offline preview. Optional: the notification sound comes from the openings pack.",
-    "ar": "ثلاثة عشر أذانا كاملا بإذن من أصبيل، للاستماع دون اتصال. اختياري: صوت التنبيه يأتي من حزمة المقاطع الافتتاحية."
+    "fr": "Treize adhans par douze muezzins, courtoisie d'Assabile, avec pour chacun une amorce courte servant de son de notification.",
+    "en": "Thirteen adhans by twelve muezzins, courtesy of Assabile, each with a short opening used as the notification sound.",
+    "ar": "ثلاثة عشر أذانا لاثني عشر مؤذنا بإذن من أصبيل، مع مقطع افتتاحي قصير لكل منها يستخدم صوتا للتنبيه."
   },
-  "url": "https://github.com/adisaf/deencoach-pack/releases/download/prayer-audio-v1.0.0/adhan_sounds_hq.zip",
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/prayer-audio-v1.1.0/adhan_sounds_hq.zip",
   "artifactFormat": "zip",
   "contentType": "application/zip",
-  "sizeCompressed": 22721720,
-  "sizeUncompressed": 23643915,
-  "sha256": "8bd131ce992cd5d57cd2bca066c7377ab309c0881b6d77a733d5ca16f84cfdff",
-  "fileCount": 14,
+  "sizeCompressed": 11991667,
+  "sizeUncompressed": 12833345,
+  "sha256": "6f5ff6bb93788f0ebcb23ad5e6b6a2bce84ae1f47aea72717bcf6b825f9375a3",
+  "fileCount": 40,
   "license": "Courtesy of Assabile (https://www.assabile.com). Attribution required, shipped as ATTRIBUTION.txt inside the archive.",
   "publicationStatus": "active",
   "minAppVersion": "1.2.3+17"

@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-# Vérifie le contenu des deux archives `prayer_audio` avant publication.
+# Vérifie le contenu de l'archive `prayer_audio` avant publication.
 #
-# Usage : ./tools/verify-prayer-audio-pack.sh <notification.zip> <full-length.zip>
-#
-# Les deux sont exigées ensemble, bien qu'elles soient publiées et téléchargées
-# séparément : le contrôle de provenance compare chaque amorce à son adhan
-# intégral, et il perdrait tout son sens sur une archive isolée.
+# Usage : ./tools/verify-prayer-audio-pack.sh <archive.zip>
 #
 # Un SHA-256 prouve qu'une archive n'a pas été altérée ; il ne prouve pas que
 # son contenu est jouable, ni qu'il est bien celui qu'il prétend être. Ce
@@ -18,8 +14,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NOTIFICATION_ARCHIVE="${1:-}"
-FULL_LENGTH_ARCHIVE="${2:-}"
+ARCHIVE_PATH="${1:-}"
 
 SAMPLE_RATE=22050
 MAX_SECONDS=30
@@ -31,16 +26,14 @@ ATTRIBUTION_ENTRY="ATTRIBUTION.txt"
 # l'application.
 CUTS_FILE="${REPO_ROOT}/provenance/prayer-audio-adhan-notification/excerpt_cuts.json"
 
-[[ -n "${NOTIFICATION_ARCHIVE}" && -n "${FULL_LENGTH_ARCHIVE}" ]] || {
-  echo 'Usage : verify-prayer-audio-pack.sh <notification.zip> <full-length.zip>' >&2
+[[ -n "${ARCHIVE_PATH}" ]] || {
+  echo 'Usage : verify-prayer-audio-pack.sh <archive.zip>' >&2
   exit 64
 }
-for archive in "${NOTIFICATION_ARCHIVE}" "${FULL_LENGTH_ARCHIVE}"; do
-  [[ -f "${archive}" ]] || {
-    echo "Erreur : archive absente : ${archive}" >&2
-    exit 66
-  }
-done
+[[ -f "${ARCHIVE_PATH}" ]] || {
+  echo "Erreur : archive absente : ${ARCHIVE_PATH}" >&2
+  exit 66
+}
 [[ -f "${CUTS_FILE}" ]] || {
   echo "Erreur : liste de reference absente : ${CUTS_FILE}" >&2
   exit 66
@@ -58,47 +51,22 @@ trap 'rm -rf "${work_dir}"' EXIT HUP INT TERM
 
 problems=()
 
-# Chaque archive porte sa propre attribution : distribuee seule, elle reste
-# creditee. L'absence dans l'une des deux est un defaut a part entiere.
-# Pas de tube ici : `grep -q` ferme le tube des la premiere correspondance,
-# `unzip` recoit un SIGPIPE, et `pipefail` transforme le succes en echec.
-for archive in "${NOTIFICATION_ARCHIVE}" "${FULL_LENGTH_ARCHIVE}"; do
-  archive_entries="$(unzip -Z1 "${archive}")"
-  case "${archive_entries}" in
-    *"${ATTRIBUTION_ENTRY}"*) ;;
-    *) problems+=("$(basename "${archive}") : ${ATTRIBUTION_ENTRY} absent") ;;
-  esac
-done
+attribution_text="$(unzip -p "${ARCHIVE_PATH}" "${ATTRIBUTION_ENTRY}")"
+[[ -n "${attribution_text}" ]] || {
+  problems+=("${ATTRIBUTION_ENTRY} absent de l'archive")
+}
 
 # Un texte peut se perimer a chaque evolution du pack sans qu'aucun controle
 # d'octets ne s'en apercoive : c'est ainsi que l'attribution a decrit pendant
-# un temps un repertoire `notification/` disparu au decoupage. On ne peut pas
-# verifier qu'une phrase est vraie, mais on peut verifier que les noms qu'elle
-# cite existent, et qu'aucun muezzin livre n'est passe sous silence.
-attribution_text="$(unzip -p "${NOTIFICATION_ARCHIVE}" "${ATTRIBUTION_ENTRY}")"
+# un temps un repertoire disparu au decoupage. On ne peut pas verifier qu'une
+# phrase est vraie, mais on peut verifier que les noms qu'elle cite existent,
+# et qu'aucun muezzin livre n'est passe sous silence.
+case "${attribution_text}" in
+  *"$(basename "${ARCHIVE_PATH}")"*) ;;
+  *) problems+=("${ATTRIBUTION_ENTRY} ne cite pas l'archive $(basename "${ARCHIVE_PATH}")") ;;
+esac
 
-# Les deux archives portent le meme texte, et l'application compte sur cette
-# identite pour n'en exposer qu'un seul exemplaire. Une divergence afficherait
-# un credit different de celui reellement distribue avec les octets non
-# exposes : la verifier ici est le seul endroit ou elle se voit.
-full_length_attribution="$(unzip -p "${FULL_LENGTH_ARCHIVE}" "${ATTRIBUTION_ENTRY}")"
-[[ "${attribution_text}" == "${full_length_attribution}" ]] || {
-  problems+=("${ATTRIBUTION_ENTRY} differe entre les deux archives")
-}
-
-for archive in "${NOTIFICATION_ARCHIVE}" "${FULL_LENGTH_ARCHIVE}"; do
-  archive_name="$(basename "${archive}")"
-  case "${attribution_text}" in
-    *"${archive_name}"*) ;;
-    *) problems+=("${ATTRIBUTION_ENTRY} ne cite pas l'archive ${archive_name}") ;;
-  esac
-done
-
-# Les noms ne collident pas entre les deux archives : `<cle>.mp3` pour
-# l'integral, `<cle>_intro.*` pour les amorces. Une extraction commune permet
-# les controles croises.
-unzip -qo "${FULL_LENGTH_ARCHIVE}" -d "${work_dir}"
-unzip -qo "${NOTIFICATION_ARCHIVE}" -d "${work_dir}"
+unzip -qo "${ARCHIVE_PATH}" -d "${work_dir}"
 
 expected_keys=()
 while IFS= read -r expected_key; do
@@ -126,8 +94,8 @@ with open('${CUTS_FILE}', encoding='utf-8') as handle:
     print(json.load(handle)['${item_key}']['cutSeconds'])
 ")"
 
-  mp3_excerpt="${work_dir}/${item_key}_intro.mp3"
-  caf_excerpt="${work_dir}/${item_key}_intro.caf"
+  mp3_excerpt="${work_dir}/notification/${item_key}_intro.mp3"
+  caf_excerpt="${work_dir}/notification/${item_key}_intro.caf"
 
   if [[ ! -f "${mp3_excerpt}" ]]; then
     problems+=("${item_key} : amorce Android absente")
@@ -200,7 +168,7 @@ done < <(printf '%s\n' "${attribution_text}" \
 # l'artefact quel que soit l'outil qui l'a produit, sans dependre d'un autre
 # depot.
 for item_key in "${expected_keys[@]}"; do
-  excerpt="${work_dir}/${item_key}_intro.mp3"
+  excerpt="${work_dir}/notification/${item_key}_intro.mp3"
   [[ -f "${excerpt}" ]] || continue
   excerpt_tags="$(ffprobe -v error -show_entries format_tags \
     -of default=noprint_wrappers=1 "${excerpt}")"
@@ -321,7 +289,7 @@ for item_key in sorted(cuts):
     # invocations ffmpeg indépendantes, donc l'une peut diverger sans l'autre.
     # Le .caf est le fichier qu'iOS joue réellement.
     for suffix, decoder in ((".mp3", decode), (".caf", decode_caf)):
-        excerpt = work_dir / f"{item_key}_intro{suffix}"
+        excerpt = work_dir / "notification" / f"{item_key}_intro{suffix}"
         if not excerpt.exists():
             continue
         try:
@@ -338,6 +306,38 @@ for item_key in sorted(cuts):
             )
 PYTHON
 
+# Le manifeste declare une taille, une taille non compressee et un nombre de
+# fichiers que rien ne recalculait : ces valeurs se RECOPIENT, la ou un digest
+# se calcule, et c'est exactement pour cela qu'elles derivent. L'application
+# refuse un telechargement dont la taille ne correspond pas a l'attendu, donc
+# une taille fausse casserait l'installation sans que le digest le voie.
+MANIFEST_PATH="${REPO_ROOT}/manifests/prayer-audio/adhan_sounds_hq.json"
+if [[ -f "${MANIFEST_PATH}" ]]; then
+  python3 - "${MANIFEST_PATH}" "${ARCHIVE_PATH}" >> "${work_dir}/problems" <<'PYTHON' || true
+import hashlib
+import json
+import sys
+import zipfile
+from pathlib import Path
+
+manifest_path, archive_path = Path(sys.argv[1]), Path(sys.argv[2])
+declared = json.loads(manifest_path.read_text(encoding="utf-8"))
+payload = archive_path.read_bytes()
+with zipfile.ZipFile(archive_path) as archive:
+    entries = archive.namelist()
+    uncompressed = sum(info.file_size for info in archive.infolist())
+
+for field, measured in (
+    ("sha256", hashlib.sha256(payload).hexdigest()),
+    ("sizeCompressed", len(payload)),
+    ("sizeUncompressed", uncompressed),
+    ("fileCount", len(entries)),
+):
+    if str(declared.get(field)) != str(measured):
+        print(f"manifeste : {field} declare {declared.get(field)}, archive {measured}")
+PYTHON
+fi
+
 if [[ -s "${work_dir}/problems" ]]; then
   while IFS= read -r line; do
     [[ -n "${line}" ]] && problems+=("${line}")
@@ -345,7 +345,7 @@ if [[ -s "${work_dir}/problems" ]]; then
 fi
 
 if [[ "${#problems[@]}" -gt 0 ]]; then
-  echo "verify-prayer-audio-pack: defauts" >&2
+  echo "verify-prayer-audio-pack: defauts dans ${ARCHIVE_PATH}" >&2
   for problem in "${problems[@]}"; do
     echo "  - ${problem}" >&2
   done

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Vérifie que les deux archives `prayer_audio` se reconstruisent à l'identique.
+# Vérifie que l'archive `prayer_audio` se reconstruit à l'identique.
 #
 # Usage : ./tools/verify-prayer-audio-reproducible.sh
 #
@@ -22,7 +22,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPO_ROOT}"
 
 ARCHIVES=(
-  "uploads/prayer-audio/adhan_notification_sounds.zip"
   "uploads/prayer-audio/adhan_sounds_hq.zip"
 )
 
