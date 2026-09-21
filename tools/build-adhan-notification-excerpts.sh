@@ -102,12 +102,19 @@ if not 0 < cut < ${MAX_SECONDS}:
   wav_path="${temporary_dir}/${item_key}_intro.wav"
 
   # Android : MP3 mono 22050 Hz 64 kbit/s. `-map_metadata -1` écarte les
-  # balises ID3 de la source, qui n'ont pas à voyager dans le pack.
+  # balises ID3 de la source, qui n'ont pas à voyager dans le pack : elles
+  # nomment un site tiers, un logiciel de montage et un titre arabe.
+  # `-fflags +bitexact` écarte en plus la balise `encoder` que ffmpeg inscrit
+  # de lui-même, et qui porte son numéro de version : sans cela, deux machines
+  # aux versions différentes produiraient des octets différents à partir du
+  # même flux audio, et le digest publié cesserait d'être reproductible par un
+  # tiers.
   ffmpeg -hide_banner -loglevel error -y \
     -i "${source_path}" \
     -map 0:a:0 \
     -t "${cut_seconds}" \
     -map_metadata -1 \
+    -fflags +bitexact \
     -ac 1 \
     -ar "${SAMPLE_RATE}" \
     -codec:a libmp3lame \
@@ -121,6 +128,7 @@ if not 0 < cut < ${MAX_SECONDS}:
     -map 0:a:0 \
     -t "${cut_seconds}" \
     -map_metadata -1 \
+    -fflags +bitexact \
     -ac 1 \
     -ar "${SAMPLE_RATE}" \
     "${wav_path}"
