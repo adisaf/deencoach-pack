@@ -1,0 +1,26 @@
+{
+  "$schema": "../../schemas/pack-manifest.schema.json",
+  "id": "adhan_sounds_hq",
+  "category": "prayer_audio",
+  "version": "1.0.0",
+  "displayName": {
+    "fr": "Adhans HQ",
+    "en": "HQ adhans",
+    "ar": "أذان عالي الجودة"
+  },
+  "description": {
+    "fr": "Huit adhans, courtoisie d'Assabile, avec une amorce courte par muezzin pour le son de notification.",
+    "en": "Eight adhans, courtesy of Assabile, with a short opening per muezzin for the notification sound.",
+    "ar": "ثمانية أذانات بإذن من أصبيل، مع مقطع افتتاحي قصير لكل مؤذن لصوت التنبيه."
+  },
+  "url": "https://github.com/adisaf/deencoach-pack/releases/download/prayer-audio-v1.0.0/adhan_sounds_hq.zip",
+  "artifactFormat": "zip",
+  "contentType": "application/zip",
+  "sizeCompressed": 12034578,
+  "sizeUncompressed": 12796185,
+  "sha256": "3b63e8ecce6966e054e53742fb7ad2750aed17282c532544d9aa35e4e507acae",
+  "fileCount": 25,
+  "license": "Courtesy of Assabile (https://www.assabile.com). Attribution required, shipped as ATTRIBUTION.txt inside the archive.",
+  "publicationStatus": "active",
+  "minAppVersion": "1.2.3+17"
+}
