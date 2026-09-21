@@ -1,0 +1,80 @@
+{
+  "adhan_ali_mala_haram": {
+    "cutSeconds": 17.28,
+    "minSilence": 0.3,
+    "noise": "-35dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_anuar_duman_turkiye": {
+    "cutSeconds": 4.12,
+    "minSilence": 0.5,
+    "noise": "-40dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_hussary_cairo": {
+    "cutSeconds": 7.84,
+    "minSilence": 0.3,
+    "noise": "-35dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_kamal_marush_maghreb": {
+    "cutSeconds": 10.61,
+    "minSilence": 0.15,
+    "noise": "-18dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_minshawi_egypt": {
+    "cutSeconds": 17.81,
+    "minSilence": 0.5,
+    "noise": "-40dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_mishary_fajr": {
+    "cutSeconds": 19.37,
+    "minSilence": 0.5,
+    "noise": "-40dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_mishary_kuwait": {
+    "cutSeconds": 17.07,
+    "minSilence": 0.5,
+    "noise": "-40dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_misr_traditional": {
+    "cutSeconds": 10.72,
+    "minSilence": 0.5,
+    "noise": "-40dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_mustafa_ismail": {
+    "cutSeconds": 21.08,
+    "minSilence": 0.15,
+    "noise": "-25dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_nasser_qatami": {
+    "cutSeconds": 26.94,
+    "minSilence": 0.15,
+    "noise": "-25dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_omar_kazabri": {
+    "cutSeconds": 17.81,
+    "minSilence": 0.2,
+    "noise": "-30dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_rabeh_ibn_darah_jazair": {
+    "cutSeconds": 13.73,
+    "minSilence": 0.5,
+    "noise": "-40dB",
+    "unit": "takbir_pair"
+  },
+  "adhan_yasser_dosari": {
+    "cutSeconds": 15.0,
+    "minSilence": 0.15,
+    "noise": "-22dB",
+    "unit": "takbir_pair"
+  }
+}
