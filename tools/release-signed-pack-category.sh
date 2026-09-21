@@ -194,13 +194,17 @@ validate_local_contract() {
   collect_and_verify_assets
 
   for manifest in "${MANIFESTS[@]}"; do
-    if [[ "${CATEGORY}" == 'quran-text' ]]; then
-      "${REPO_ROOT}/tools/verify-quran-text-pack.sh" \
-        "$(resolve_asset_path "$(jq -r '.packId' "${manifest}")" "$(jq -r '.artifacts[0].fileName' "${manifest}")")"
-    else
-      "${REPO_ROOT}/tools/verify-quranenc-translation-pack.sh" \
-        "$(jq -r '.packId' "${manifest}")" "${manifest}"
-    fi
+    case "${CATEGORY}" in
+      quran-text)
+        "${REPO_ROOT}/tools/verify-quran-text-pack.sh" \
+          "$(resolve_asset_path "$(jq -r '.packId' "${manifest}")" "$(jq -r '.artifacts[0].fileName' "${manifest}")")"
+        ;;
+      quran-translations)
+        "${REPO_ROOT}/tools/verify-quranenc-translation-pack.sh" \
+          "$(jq -r '.packId' "${manifest}")" "${manifest}"
+        ;;
+      *) fail "aucun vérificateur de contenu pour ${CATEGORY}." ;;
+    esac
   done
 }
 
