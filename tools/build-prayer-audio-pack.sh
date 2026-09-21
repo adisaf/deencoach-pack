@@ -1,22 +1,29 @@
 #!/usr/bin/env bash
-# Construit les deux archives déterministes de la catégorie `prayer_audio`.
+# Construit l'archive déterministe unique de la catégorie `prayer_audio`.
 #
-#   adhan_notification_sounds.zip   les amorces aux deux formats
-#   adhan_sounds_hq.zip             les adhans intégraux
+#   adhan_sounds_hq.zip   les adhans intégraux et leurs amorces de notification
 #
-# Le découpage suit l'usage, pas la plateforme. Tout le monde a besoin des
-# amorces, qui servent de son de notification et pèsent quelques mégaoctets.
-# Les adhans intégraux ne servent qu'à la pré-écoute au moment de choisir un
-# muezzin, pèsent le reste, et n'ont donc pas à être imposés à chacun.
-# Séparer par plateforme aurait économisé moins d'un dixième du poids en
-# doublant la chaîne de vérification : le gisement est ici.
+# Le pack avait été découpé en deux archives en v1.0.0, l'une requise et
+# l'autre facultative, pour épargner vingt-deux mégaoctets à qui ne voulait
+# qu'un son de notification. Le plafonnement des débits à 32 kbit/s ayant
+# ramené les intégraux de 22,7 à 8,5 Mo, le propriétaire produit a choisi en
+# v1.1.0 de revenir à une archive unique : un seul téléchargement, un seul
+# digest, un seul installateur.
 #
-# Chaque archive porte son propre `ATTRIBUTION.txt`. L'obligation de crédit
-# suit les octets : une archive distribuée seule reste créditée.
+# Disposition :
+#   <cle>.mp3                     l'adhan intégral, pour la pré-écoute
+#   notification/<cle>_intro.caf  l'amorce iOS
+#   notification/<cle>_intro.mp3  l'amorce Android
+#   ATTRIBUTION.txt               le crédit, qui voyage avec les octets
+#
+# Les intégraux proviennent de `normalized/`, où les débits ont été plafonnés.
+# Les amorces proviennent de `excerpts/`, découpées depuis les enregistrements
+# d'origine et non depuis les versions ré-encodées : le son joué à l'heure de
+# la prière ne subit aucune cascade de transcodage.
 #
 # Déterminisme : ordre des entrées trié, horodatage figé, aucun attribut
 # externe. Deux exécutions sur les mêmes octets d'entrée produisent le même
-# SHA-256, ce qui rend chaque digest publié reproductible par un tiers.
+# SHA-256, ce qui rend le digest publié reproductible par un tiers.
 
 set -euo pipefail
 
@@ -24,15 +31,14 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPO_ROOT}"
 
 WORK_DIR="uploads/prayer-audio/adhan-notification-excerpts"
-SOURCE_DIR="${WORK_DIR}/sources"
+SOURCE_DIR="${WORK_DIR}/normalized"
 EXCERPT_DIR="${WORK_DIR}/excerpts"
 ATTRIBUTION_FILE="${WORK_DIR}/ATTRIBUTION.txt"
-NOTIFICATION_ARCHIVE="uploads/prayer-audio/adhan_notification_sounds.zip"
-FULL_LENGTH_ARCHIVE="uploads/prayer-audio/adhan_sounds_hq.zip"
+ARCHIVE_PATH="uploads/prayer-audio/adhan_sounds_hq.zip"
 CUTS_FILE="provenance/prayer-audio-adhan-notification/excerpt_cuts.json"
 
 # Horodatage figé des entrées. Toute autre valeur casserait la reproductibilité
-# des SHA-256 publiés sans rien apporter.
+# du SHA-256 publié sans rien apporter.
 FIXED_TIMESTAMP="2026-09-21 00:00:00"
 
 command -v python3 >/dev/null 2>&1 || {
@@ -48,8 +54,7 @@ for required in "${ATTRIBUTION_FILE}" "${CUTS_FILE}"; do
 done
 
 python3 - "${SOURCE_DIR}" "${EXCERPT_DIR}" "${ATTRIBUTION_FILE}" \
-  "${NOTIFICATION_ARCHIVE}" "${FULL_LENGTH_ARCHIVE}" "${CUTS_FILE}" \
-  "${FIXED_TIMESTAMP}" <<'PY'
+  "${ARCHIVE_PATH}" "${CUTS_FILE}" "${FIXED_TIMESTAMP}" <<'PY'
 import hashlib
 import json
 import sys
@@ -57,10 +62,10 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-(source_dir, excerpt_dir, attribution_file, notification_archive,
- full_length_archive, cuts_file, fixed_timestamp) = (
+(source_dir, excerpt_dir, attribution_file, archive_path,
+ cuts_file, fixed_timestamp) = (
     Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]),
-    Path(sys.argv[4]), Path(sys.argv[5]), Path(sys.argv[6]), sys.argv[7],
+    Path(sys.argv[4]), Path(sys.argv[5]), sys.argv[6],
 )
 
 moment = datetime.strptime(fixed_timestamp, "%Y-%m-%d %H:%M:%S")
@@ -76,22 +81,24 @@ if not item_keys:
 # Les clés sont l'unique référence : un intégral sans coupe enregistrée, ou une
 # coupe sans intégral, est une incohérence qu'il vaut mieux voir ici qu'à
 # l'installation.
-notification_entries = {"ATTRIBUTION.txt": attribution_file}
-full_length_entries = {"ATTRIBUTION.txt": attribution_file}
+entries = {"ATTRIBUTION.txt": attribution_file}
 missing = []
 
 for item_key in item_keys:
     full_length = source_dir / f"{item_key}.mp3"
     if not full_length.exists():
-        missing.append(f"{item_key} : adhan integral absent de {source_dir}")
+        missing.append(
+            f"{item_key} : adhan integral absent de {source_dir}, "
+            "lancez normalize-prayer-audio-sources.sh"
+        )
         continue
-    full_length_entries[full_length.name] = full_length
+    entries[full_length.name] = full_length
     for suffix in (".caf", ".mp3"):
         excerpt = excerpt_dir / f"{item_key}_intro{suffix}"
         if not excerpt.exists():
             missing.append(f"{item_key} : amorce {suffix} absente de {excerpt_dir}")
             continue
-        notification_entries[excerpt.name] = excerpt
+        entries[f"notification/{excerpt.name}"] = excerpt
 
 stray = sorted(
     path.stem for path in source_dir.glob("*.mp3") if path.stem not in item_keys
@@ -105,27 +112,22 @@ if missing:
         print(f"  - {problem}", file=sys.stderr)
     raise SystemExit(65)
 
+archive_path.parent.mkdir(parents=True, exist_ok=True)
+uncompressed = 0
+with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    for name in sorted(entries):
+        payload = entries[name].read_bytes()
+        uncompressed += len(payload)
+        info = zipfile.ZipInfo(name, date_time=date_time)
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o644 << 16
+        archive.writestr(info, payload)
 
-def build(archive_path, entries, label):
-    archive_path.parent.mkdir(parents=True, exist_ok=True)
-    uncompressed = 0
-    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for name in sorted(entries):
-            payload = entries[name].read_bytes()
-            uncompressed += len(payload)
-            info = zipfile.ZipInfo(name, date_time=date_time)
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o644 << 16
-            archive.writestr(info, payload)
-    digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
-    print(f"=== {label} ===")
-    print(f"archive           {archive_path}")
-    print(f"fileCount         {len(entries)}")
-    print(f"sizeCompressed    {archive_path.stat().st_size}")
-    print(f"sizeUncompressed  {uncompressed}")
-    print(f"sha256            {digest}")
-
-
-build(notification_archive, notification_entries, "sons de notification, requis")
-build(full_length_archive, full_length_entries, "adhans integraux, optionnel")
+digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+print(f"archive           {archive_path}")
+print(f"muezzins          {len(item_keys)} adhans, {2 * len(item_keys)} amorces")
+print(f"fileCount         {len(entries)}")
+print(f"sizeCompressed    {archive_path.stat().st_size}")
+print(f"sizeUncompressed  {uncompressed}")
+print(f"sha256            {digest}")
 PY

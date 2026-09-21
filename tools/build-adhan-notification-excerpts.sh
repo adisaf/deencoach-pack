@@ -16,6 +16,15 @@
 # Contrainte iOS : un son de notification doit être `.caf`, `.aiff` ou `.wav` et
 # durer moins de 30 secondes. Un MP3, ou un fichier plus long, est ignoré en
 # silence et l'appareil joue le son par défaut.
+#
+# ATTENTION, SOURCE DES AMORCES. Ce script lit `sources/`, c'est-à-dire les
+# enregistrements d'origine, et JAMAIS `normalized/`, dont le débit a été
+# plafonné pour l'archive de pré-écoute. Les adhans intégraux publiés dans
+# `adhan_sounds_hq.zip` ne sont donc pas les sources de ces amorces. Rejouer
+# une coupe à partir de l'archive publiée produirait des octets différents de
+# ceux distribués, et ajouterait une cascade de transcodage au son que
+# l'utilisateur entend à l'heure de la prière. Pour reproduire une amorce à
+# l'identique, il faut repartir des URL d'origine, pas du pack.
 
 set -euo pipefail
 
