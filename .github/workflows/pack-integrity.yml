@@ -23,7 +23,11 @@ jobs:
           for script in tools/*.sh; do
             bash -n "$script"
           done
+      - name: Test atomic renewal invariants
+        run: python3 -m unittest discover -s tools -p test_renew_signed_channel.py -v
       - name: Validate signed manifests
+        env:
+          MINIMUM_REMAINING_DAYS: 30
         run: |
           ./tools/validate-client-manifests.sh
           ./tools/verify-client-manifest-signatures.sh
